@@ -195,20 +195,25 @@
      ★ 분량은 시간이다. 한 문장 O·X 는 확신도 + 답 + 판정 읽기로 20초쯤 걸린다고 어림한다
        (실측 전 어림값 — 화면에도 '약'을 붙인다). 15분 → 45문장.
      ★ 하루에 한 번 정하고 저장한다. 새로고침마다 바뀌면 학생이 끝을 못 본다. */
-  var SEC_PER = 20;
+  var SEC_PER = 20, SEC_MC = 60;
   function today() {
     if (S.today && S.today.date === TODAY && S.today.min === minutes()) return decorate(S.today);
-    var total = Math.round(minutes() * 60 / SEC_PER);
-    var due = dueList().slice(0, Math.round(total * 0.5));
-    var foci = focusNodes(3), fresh = [];
-    var need = total - due.length - 2, per = Math.ceil(need / Math.max(1, foci.length));
-    foci.forEach(function (n) { fresh = fresh.concat(freshOf(n.no, per).map(function (q) { return q.i; })); });
-    if (fresh.length < need) {                 /* 쟁점 셋으로 모자라면 다음 쟁점에서 채운다 */
-      focusNodes(12).slice(3).forEach(function (n) {
-        if (fresh.length < need) fresh = fresh.concat(freshOf(n.no, need - fresh.length).map(function (q) { return q.i; }));
+    /* ★ 분량은 시간(초)으로 채운다 — 한 문장 O·X 약 20초, 기출 풀기(지문·4지선다) 약 60초(어림값, 실측 전).
+       국어·영어처럼 기출 풀기만 있는 과목에서 15분에 45문항을 내면 끝을 못 본다(0924). */
+    function 초(id) { var q = ITEM[id]; return q && q.mc ? SEC_MC : SEC_PER; }
+    var 예산 = minutes() * 60, 쓴 = 0;
+    var due = [];
+    dueList().forEach(function (id) { if (쓴 + 초(id) <= 예산 * 0.5) { due.push(id); 쓴 += 초(id); } });
+    var foci = focusNodes(3), fresh = [], 본 = {};
+    function 담기(no, 한도) {
+      freshOf(no, 60).some(function (q) {
+        if (쓴 + 초(q.i) > 한도 || 본[q.i]) return 쓴 + SEC_PER > 한도;
+        fresh.push(q.i); 본[q.i] = 1; 쓴 += 초(q.i); return false;
       });
     }
-    fresh = fresh.slice(0, need);
+    var 몫 = (예산 - 40 - 쓴) / Math.max(1, foci.length);   /* 짝 둘 몫 40초는 남긴다 */
+    foci.forEach(function (n, i) { 담기(n.no, 쓴 + 몫); });
+    if (쓴 < 예산 - 60) focusNodes(12).slice(3).forEach(function (n) { if (쓴 < 예산 - 60) 담기(n.no, 예산 - 40); });
     /* 헷갈리는 짝 둘 — 오늘 쟁점에서, 안 푼 것 */
     var ps = [];
     foci.forEach(function (n) { pairs(n.no).forEach(function (p) { if (!S.pairs[p.id] && ps.length < 2) ps.push(p.id); }); });
