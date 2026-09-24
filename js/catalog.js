@@ -30,7 +30,10 @@
     crimlaw:{ name: "형법" },
     intl:   { name: "국제법개론" },
     customs:{ name: "관세법개론" },
-    ltax:   { name: "지방세법" }
+    ltax:   { name: "지방세법" },
+    biz:    { name: "경영학" },
+    comp:   { name: "컴퓨터일반" },
+    infosec:{ name: "정보보호론" }
   };
 
   /* 시험 — 직렬이 하나면 series 를 두지 않는다 */
@@ -55,6 +58,13 @@
       { id: "edu",     name: "교육행정",   subs: ["kor", "eng", "edu", "admin"] },
       { id: "welfare", name: "사회복지",   subs: ["kor", "eng", "welfare", "admin"] },
       { id: "tax",     name: "세무",       subs: ["kor", "eng", "ltax", "acct"] }
+    ] },
+    /* 군무원 9급 — 영어·한국사는 검정 대체, 필기 3과목. 기출: 국방부 공개 2021~2026(2026-09-24 테라러닝_허브 수집) */
+    { id: "gunmu", name: "군무원 9급", sub: "국방부", date: "2027-07-03", series: [  /* 예상 — 2026 필기 7월 초 */
+      { id: "adm",  name: "행정",     subs: ["kor", "admin", "pub"] },
+      { id: "logi", name: "군수",     subs: ["kor", "admin", "biz"] },
+      { id: "inv",  name: "수사",     subs: ["kor", "crimlaw", "cpro"] },
+      { id: "cs",   name: "전산",     subs: ["kor", "comp", "infosec"] }
     ] }
   ];
 
