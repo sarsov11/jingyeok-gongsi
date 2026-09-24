@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>진격의 공시 · 행정법</title>
+<title>진격의 공시</title>
 <link rel="icon" href="icons/favicon.svg">
 <link rel="manifest" href="manifest.webmanifest">
 <script>try{document.documentElement.dataset.skin=localStorage.getItem("jg.skin")||"white"}catch(e){document.documentElement.dataset.skin="white"}</script>
@@ -26,12 +26,25 @@
   .mini div{padding:12px 10px;border:1px solid var(--line);border-radius:var(--r2);background:var(--surface)}
   .mini b{display:block;font-size:21px;font-weight:900;letter-spacing:-.04em}
   .mini span{font-size:13px;color:var(--ink-3)}
+  /* 과목 고르기 — 학생 시험의 과목만. 준비 안 된 과목은 흐리게 */
+  .subs{display:flex;gap:6px;overflow-x:auto;padding:16px 0 2px;scrollbar-width:none}
+  .subs::-webkit-scrollbar{display:none}
+  .subs a,.subs span{flex:none;text-decoration:none;font-size:15px;font-weight:800;padding:8px 14px;border-radius:99px;
+    border:1.5px solid var(--line-2);color:var(--ink-2);background:var(--surface);white-space:nowrap}
+  .subs a.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+  .subs span{color:var(--ink-4);border-style:dashed;font-weight:700}
+  .subs span small{font-size:12px;margin-left:4px}
+  .att{margin-top:18px;padding:14px 16px;border-radius:var(--r3);background:var(--surface-2)}
+  .att h3{font-size:15px;color:var(--ink-2)}
+  .att summary{cursor:pointer;font-weight:800;font-size:15px;color:var(--ink-2)}
+  .mini div{background:var(--surface-2);border:0}
   .alt{margin-top:28px}
   .alt h3{font-size:15px;color:var(--ink-3);margin-bottom:8px}
 </style>
 </head>
 <body>
 <div class="page">
+  <div class="subs" id="subs"></div>
   <div class="exam">
     <div class="k" id="ek"></div>
     <div class="d num" id="ed"></div>
@@ -40,6 +53,7 @@
   <div class="todo" id="todo"></div>
 
   <div class="mini" id="mini"></div>
+  <div class="att" id="att"></div>
 
   <div class="alt">
     <h3>다른 걸 연습하고 싶다면</h3>
@@ -47,7 +61,9 @@
   </div>
 </div>
 
-<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="data/ready.js"></script>
+<script src="js/boot.js"></script>
 <script src="js/store.js"></script>
 <script>
 (function () {
@@ -56,7 +72,11 @@
   var $ = function (id) { return document.getElementById(id); }, esc = GB.esc;
 
   var tr = GB.track(), dd = GB.dday();
-  $("ek").textContent = tr.name + " 행정법";
+  $("ek").textContent = tr.name + " · " + GB.subject;
+  $("subs").innerHTML = GB.subs().map(function (k) {
+    if (!CATALOG.ready(k)) return "<span>" + esc(CATALOG.name(k)) + "<small>준비 중</small></span>";
+    return '<a href="index.html?s=' + k + '"' + (k === GB.cur() ? ' class="on"' : "") + ">" + esc(CATALOG.name(k)) + "</a>";
+  }).join("");
   $("ed").innerHTML = (dd > 0 ? "D-" + dd : dd === 0 ? "D-DAY" : "시험 끝") + "<small>" + GB.goal().replace(/-/g, ".") +
     ' <span class="chip">' + GB.goalMark() + "</span></small>";
 
@@ -81,11 +101,34 @@
   }
   $("todo").innerHTML = h;
 
-  var o = GB.overall();
+  /* 불꽃(연속) · 방패(등급) · 출석(주간 + 월간) — 선호대장 1차 */
+  var FLAME = '<svg viewBox="0 0 24 24"><path fill="#F97316" d="M12 2c1 3.5 4.5 5.2 4.5 9.5A4.5 4.5 0 0 1 12 16a4.5 4.5 0 0 1-4.5-4.5c0-1.8.8-3.1 1.8-4.1.1 1.5.9 2.6 2 2.9C11 8 11.2 4.6 12 2z"/><path fill="#FDBA74" d="M12 22a6 6 0 0 1-6-6c0-2.3 1.2-4 2.6-5.3-.1 2.5 1.4 4.3 3.4 4.3s3.5-1.6 3.4-4.3C16.8 12 18 13.7 18 16a6 6 0 0 1-6 6z"/></svg>';
+  var SHIELD = ["#B7794B", "#9CA3AF", "#EAB308", "#22D3EE", "#60A5FA"];
+  var tr2 = GB.tier();
+  var shield = '<svg viewBox="0 0 34 38"><path d="M17 1 32 6v12c0 9.5-6.4 16.2-15 19C8.4 34.2 2 27.5 2 18V6z" fill="' + SHIELD[tr2.rank] + '"/><path d="M17 5 28 9v9c0 7.2-4.6 12.4-11 14.8C10.6 30.4 6 25.2 6 18V9z" fill="rgba(255,255,255,.28)"/></svg>';
   $("mini").innerHTML =
-    '<div><b class="num">' + GB.streak() + "일</b><span>연속</span></div>" +
-    '<div><b class="num">' + GB.todayCount() + "</b><span>오늘 푼 문장</span></div>" +
-    '<div><b class="num">' + o.prog + "%</b><span>전체 " + GB.num(o.n) + "문장 중</span></div>";
+    '<div><b class="num flame">' + FLAME + GB.streak() + "일</b><span>연속</span></div>" +
+    (GB.tierOn() ? '<div><b class="shield">' + shield + '<span style="font-size:16px">' + tr2.name + "</span></b><span>오래 기억한 문장 " + GB.num(tr2.held) + "개</span></div>"
+                 : '<div><b class="num">' + GB.overall().prog + "%</b><span>푼 문장</span></div>") +
+    '<div><b class="num">' + GB.todayCount() + "</b><span>오늘 푼 문장</span></div>";
+  (function 출석() {
+    var D = GB.days(), now = new Date(), y = now.getFullYear(), m = now.getMonth();
+    function ymd(d) { return GB.ymd(d); }
+    var 주 = "", 월 = "", w0 = new Date(now); w0.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    for (var i = 0; i < 7; i++) {
+      var d = new Date(w0); d.setDate(w0.getDate() + i);
+      주 += '<i class="' + (D[ymd(d)] ? "on" : "") + (ymd(d) === ymd(now) ? " today" : "") + '">' + "월화수목금토일"[i] + "</i>";
+    }
+    var first = new Date(y, m, 1), pad = (first.getDay() + 6) % 7, last = new Date(y, m + 1, 0).getDate();
+    월 = "월화수목금토일".split("").map(function (c) { return "<b>" + c + "</b>"; }).join("");
+    for (var k = 0; k < pad; k++) 월 += '<i class="blank"></i>';
+    for (var dd = 1; dd <= last; dd++) {
+      var dt = new Date(y, m, dd);
+      월 += '<i class="' + (D[ymd(dt)] ? "on" : "") + (ymd(dt) === ymd(now) ? " today" : "") + '">' + dd + "</i>";
+    }
+    $("att").innerHTML = '<h3>이번 주</h3><div class="cal">' + 주 + '</div>' +
+      '<details style="margin-top:10px"><summary>' + (m + 1) + "월 출석</summary>" + '<div class="cal">' + 월 + "</div></details>";
+  })();
 
   var wrong = GB.wrongList().length;
   $("alt").innerHTML =

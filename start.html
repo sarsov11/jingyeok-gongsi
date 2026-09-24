@@ -46,7 +46,9 @@
   <div id="scr"></div>
 </div>
 
-<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="data/ready.js"></script>
+<script src="js/boot.js"></script>
 <script src="js/judge.js"></script>
 <script src="js/store.js"></script>
 <script>
@@ -54,9 +56,10 @@
   "use strict";
   var $ = function (id) { return document.getElementById(id); }, esc = GB.esc;
   var LIMIT = 15000;     /* 배치 시험 한 문장 제한 — 행정법 선지는 통사 O·X(10초)보다 길어 15초 */
-  var STEPS = ["intro", "name", "track", "date", "min", "check", "done"];
+  var STEPS = ["intro", "exam", "series", "subs", "name", "date", "min", "check", "done"];
+  /* 과목이 정해진 뒤 실력 확인은 그 학생 과목 중 준비된 첫 과목으로 — 지금 실린 자료가 다르면 그 과목으로 다시 연다 */
+  var 시작단계 = new URLSearchParams(location.search).get("step");
   var at = 0, A = { rec: [] };
-  var 총문장 = GB.overall().n;
 
   function dots() {
     $("dots").innerHTML = STEPS.map(function (s, i) { return '<i class="' + (i <= at ? "on" : "") + '"></i>'; }).join("");
@@ -66,8 +69,8 @@
 
   var 화면 = {
     intro: function () {
-      $("scr").innerHTML = '<h1>행정법, 시험에 나온 문장으로<br>O·X부터 풉니다</h1>' +
-        '<p class="lead">시험에 실제로 나온 문장 ' + GB.num(총문장) + "개. 하루 정한 시간만큼, 오늘 할 것은 우리가 골라요.</p>" +
+      $("scr").innerHTML = '<h1>공시, 시험에 나온 문장으로<br>O·X부터 풉니다</h1>' +
+        '<p class="lead">소방 · 경찰 · 9급. 하루 정한 시간만큼, 오늘 할 것은 우리가 골라요.</p>' +
         '<div class="body"></div><div class="foot"><button class="btn block" id="n">시작하기</button></div>';
       $("n").onclick = nextStep;
     },
@@ -79,20 +82,48 @@
       $("nm").onkeydown = function (e) { if (e.key === "Enter") $("n").click(); };
       $("n").onclick = function () { GB.setName($("nm").value); nextStep(); };
     },
-    track: function () {
-      var cur = null;      /* 고른 적이 있을 때만 눌린 채로 — 안 골랐는데 첫 칸이 눌려 있으면 고른 것처럼 보인다 */
-      try { cur = (JSON.parse(localStorage.getItem("jg.pref.v1") || "{}").track) || null; } catch (e) {}
-      $("scr").innerHTML = "<h1>어떤 시험을 봐요?</h1><p class=\"lead\">같은 쟁점이면 이 시험 기출을 먼저 내요.</p>" +
-        '<div class="body"><div class="opts" id="op">' + GB.TRACKS.map(function (t) {
-          return '<button type="button" data-v="' + t.id + '" aria-pressed="' + (t.id === cur) + '">' + t.name + "<small>행정법 " + t.n + "문항</small></button>";
+    exam: function () {
+      var cur = null;
+      try { cur = (JSON.parse(localStorage.getItem("jg.pref.v1") || "{}").exam) || null; } catch (e) {}
+      $("scr").innerHTML = "<h1>어떤 시험을 봐요?</h1><p class=\"lead\">시험에 맞춰 과목과 기출을 골라 드려요.</p>" +
+        '<div class="body"><div class="opts" id="op">' + CATALOG.EXAMS.map(function (e) {
+          return '<button type="button" data-v="' + e.id + '" aria-pressed="' + (e.id === cur) + '">' + e.name + "<small>" + e.sub + "</small></button>";
         }).join("") + "</div></div>";
       $("op").querySelectorAll("button").forEach(function (b) {
-        b.onclick = function () { GB.setTrack(b.dataset.v); setTimeout(nextStep, 120); b.setAttribute("aria-pressed", "true"); };
+        b.onclick = function () {
+          b.setAttribute("aria-pressed", "true");
+          var e = CATALOG.exam(b.dataset.v);
+          GB.setExam(e.id, null);
+          setTimeout(function () { go(STEPS.indexOf(e.series ? "series" : "subs")); }, 120);
+        };
       });
+    },
+    series: function () {
+      var e = GB.exam();
+      if (!e.series) return go(STEPS.indexOf("subs"));
+      $("scr").innerHTML = "<h1>어느 직렬이에요?</h1><p class=\"lead\">" + esc(e.name) + " — 직렬마다 전문과목이 달라요.</p>" +
+        '<div class="body"><div class="opts" id="op">' + e.series.map(function (x) {
+          return '<button type="button" data-v="' + x.id + '">' + x.name + "<small>" +
+            x.subs.map(function (k) { return CATALOG.name(k); }).join(" · ") + "</small></button>";
+        }).join("") + "</div></div>";
+      $("op").querySelectorAll("button").forEach(function (b) {
+        b.onclick = function () { b.setAttribute("aria-pressed", "true"); GB.setExam(e.id, b.dataset.v); setTimeout(nextStep, 120); };
+      });
+    },
+    subs: function () {
+      var ss = GB.subs();
+      $("scr").innerHTML = "<h1>이 과목들을 봐요</h1><p class=\"lead\">" + esc(GB.track().name) + " 시험 과목이에요. 준비된 과목부터 풀 수 있어요.</p>" +
+        '<div class="body"><div class="opts">' + ss.map(function (k) {
+          var r = CATALOG.ready(k);
+          return '<button type="button" disabled style="cursor:default;opacity:1">' + CATALOG.name(k) + "<small>" +
+            (r ? "기출 문장 " + GB.num(CATALOG.count(k)) + "개" : "준비 중") + "</small></button>";
+        }).join("") + "</div></div>" +
+        '<div class="foot"><button class="btn block" id="n">좋아요</button></div>';
+      $("n").onclick = nextStep;
     },
     date: function () {
       var tr = GB.track();
-      $("scr").innerHTML = "<h1>시험 날짜</h1><p class=\"lead\">2027년 " + esc(tr.name) + " 일정은 아직 공고 전이에요. 예년 기준 예상 날짜를 넣어 뒀어요.</p>" +
+      $("scr").innerHTML = "<h1>시험 날짜</h1><p class=\"lead\">2027년 " + esc(GB.exam().name) + " 일정은 아직 공고 전이에요. 예년 기준 예상 날짜를 넣어 뒀어요.</p>" +
         '<div class="body"><div class="dateline num"><span id="dv">' + GB.goal().replace(/-/g, ".") + '</span><span class="chip" id="dm">' + GB.goalMark() + "</span></div>" +
         '<input type="date" id="di" value="' + GB.goal() + '"></div>' +
         '<div class="foot"><button class="btn block" id="n">이 날짜로</button></div>';
@@ -115,6 +146,9 @@
       });
     },
     check: function () {
+      var mine = GB.subs().filter(function (k) { return CATALOG.ready(k); });
+      if (mine.length && mine.indexOf(GB.cur()) < 0) { location.replace("start.html?s=" + mine[0] + "&step=check"); return; }
+      if (!mine.length) return go(STEPS.indexOf("done"));
       var set = GB.placementSet(20), i = 0, timer = null, t0 = 0;
       function one() {
         if (i >= set.length) { clearInterval(timer); return fin(); }
@@ -172,7 +206,7 @@
       $("n").onclick = function () { GB.setOnboarded(); location.href = "index.html"; };
     }
   };
-  go(0);
+  go(시작단계 && STEPS.indexOf(시작단계) >= 0 ? STEPS.indexOf(시작단계) : 0);
 })();
 </script>
 </body>

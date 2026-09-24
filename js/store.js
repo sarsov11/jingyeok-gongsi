@@ -15,7 +15,7 @@
   var T = window.TREE, QB = window.QBANK || {}, PR = window.PAIRS || [];
   if (!T) { console.error("data.js 가 먼저 실려야 한다"); return; }
 
-  var KEY = "jg." + T.subject + ".v1", PREF = "jg.pref.v1", SKIN = "jg.skin";
+  var KEY = "jg." + (T.key || T.subject) + ".v1", PREF = "jg.pref.v1", SKIN = "jg.skin";
 
   function read(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -54,24 +54,25 @@
   function pairs(no) { return no == null ? PR : (PR_BY[no] || []); }
   function pair(id) { return PR[+String(id).slice(1)]; }
 
-  /* ── 직렬·시험일 ──
-     ★ 2027년 시험일은 2026-09-23 현재 공고 전이다. 「예상」 마크를 붙이고, 학생이 바꿀 수 있다.
-       소방은 2027년부터 필기가 3월 초로 당겨진다는 보도(시정일보)를 따랐다. 나머지는 예년 달 기준 어림. */
-  var TRACKS = [
-    { id: "n9", name: "국가직 9급", exam: "국가직 9급", n: 20, date: "2027-04-03" },
-    { id: "l9", name: "지방직 9급", exam: "지방직 9급", n: 20, date: "2027-06-19" },
-    { id: "f9", name: "소방 공채",  exam: "소방 공채",  n: 25, date: "2027-03-06" },
-    { id: "n7", name: "국가직 7급", exam: "국가직 7급", n: 25, date: "2027-07-17" },
-    { id: "l7", name: "지방직 7급", exam: "지방직 7급", n: 20, date: "2027-10-30" },
-    { id: "gh", name: "국회직 8급", exam: "국회직 8급", n: 25, date: "2027-09-04" }
-  ];
-  function track() { return TRACKS.filter(function (t) { return t.id === P.track; })[0] || TRACKS[0]; }
-  function setTrack(id) {
-    P.track = id;
-    if (!P.goalMine) P.goal = track().date;      /* 직접 넣은 날짜가 아니면 직렬 따라 바뀐다 */
+  /* ── 시험·직렬·과목 ──
+     시험 목록은 catalog.js. 학생 설정 — P.exam(시험 id) · P.series(9급 직렬 id) · P.subs(과목 id 들) · P.cur(지금 과목).
+     ★ 2027년 시험일은 공고 전이라 「예상」. 학생이 바꾸면 「직접」. */
+  var C = window.CATALOG;
+  function exam() { return (C && C.exam(P.exam)) || (C && C.EXAMS[0]) || { id: "", name: "", date: "2027-04-03" }; }
+  function setExam(id, sid) {
+    P.exam = id; P.series = sid || null;
+    P.subs = C ? C.subsOf(id, sid) : [];
+    if (!P.goalMine) P.goal = exam().date;
     savePref();
   }
-  function goal() { return P.goal || track().date; }
+  function subs() { return (P.subs && P.subs.length) ? P.subs.slice() : [T.key || "admin"]; }
+  function cur() { return window.JG_CUR || T.key; }
+  function setCur(id) { P.cur = id; savePref(); }
+  function seriesName() { var s = C && C.series(P.exam, P.series); return s ? s.name : ""; }
+  /* 옛 이름 호환 — 화면 몇 곳이 track() 을 부른다 */
+  function track() { var e = exam(); return { id: e.id, name: e.name + (seriesName() ? " " + seriesName() : ""), exam: e.name, date: e.date }; }
+  function setTrack(id) { setExam(id, P.series); }
+  function goal() { return P.goal || exam().date; }
   function goalMark() { return P.goalMine ? "직접" : "예상"; }
   function setGoal(d, mine) { P.goal = d || null; P.goalMine = !!mine; savePref(); }
   function dday() { return dayNo(goal()) - TODAYN; }
@@ -157,7 +158,7 @@
      같은 쟁점이면 **내 직렬 기출 → 최근 연도 → 배정이 확실한 것** 순으로 먼저 낸다. */
   function rank(q) {
     var s = 0;
-    if (q.e === track().exam) s += 4;
+    if (q.e === exam().name) s += 4;
     s += Math.max(0, (q.y || 2015) - 2015) * 0.3;
     if (q.c === "A") s += 1;
     return s;
@@ -239,6 +240,25 @@
     while (S.days[ymd(d)]) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
+  /* ── 등급 — 방패 배지(선호대장 1차: 「그냥 등급」, 남학생은 「실버 II」에 반응, 여학생은 관심 없음 → 대상별로 켜고 끈다)
+     오래 기억한 문장(간격 복습 3칸 이상 = 7일 넘게 버틴 것)이 이 과목 전체에서 차지하는 비율로 매긴다. */
+  var TIERS = ["브론즈", "실버", "골드", "플래티넘", "다이아"], TIER_CUT = [0, 0.05, 0.15, 0.3, 0.5];
+  function tier() {
+    var n = 0, held = 0;
+    Object.keys(QB).forEach(function (k) { n += QB[k].length; });
+    Object.keys(S.ans).forEach(function (id) { if (ITEM[id] && S.ans[id].box >= 3) held++; });
+    var r = n ? held / n : 0, t = 0;
+    for (var i = 0; i < TIER_CUT.length; i++) if (r >= TIER_CUT[i]) t = i;
+    var lo = TIER_CUT[t], hi = TIER_CUT[t + 1] || 1, step = (r - lo) / (hi - lo);
+    var div = t === 4 ? "" : step < 1 / 3 ? " III" : step < 2 / 3 ? " II" : " I";
+    return { name: TIERS[t] + div, rank: t, held: held, n: n };
+  }
+  function tierOn() {
+    if (P.tierOn != null) return !!P.tierOn;
+    return P.exam === "fire" || P.exam === "police";
+  }
+  function setTierOn(v) { P.tierOn = !!v; savePref(); }
+  function days() { return S.days; }
   function todayCount() { return (S.days[TODAY] || { n: 0 }).n; }
 
   /* ── 배치 시험 20문장 ──
@@ -296,7 +316,7 @@
   /* ── 스킨 ── */
   var SKINS = [
     { v: "white", n: "화이트", c: "#FFFFFF" },
-    { v: "paper", n: "종이", c: "#FAF8F3" },
+    { v: "jelly", n: "젤리", c: "#FFD3E6" },
     { v: "night", n: "밤", c: "#0B0D11" }
   ];
   function skin() { try { return localStorage.getItem(SKIN) || "white"; } catch (e) { return "white"; } }
@@ -323,7 +343,7 @@
     var nav = document.createElement("div");
     nav.className = "nav";
     nav.innerHTML = '<div class="in"><a class="logo" href="index.html"><i></i>' + esc(T.brand) +
-      '<span class="sub">' + esc(T.brandSub || T.subject) + "</span></a>" +
+      '<span class="sub">' + esc(T.subject) + "</span></a>" +
       '<nav class="navlinks">' + PAGES.map(function (p) {
         return '<a href="' + p[0] + '"' + (p[0] === here ? ' class="on"' : "") + ">" + p[1] + "</a>";
       }).join("") + "</nav></div>";
@@ -368,9 +388,9 @@
     nodeStat: nodeStat, chStat: chStat, partStat: partStat, overall: overall,
     answer: answer, pairAnswer: pairAnswer, answered: answered, reset: reset,
     dueList: dueList, wrongList: wrongList, focusNodes: focusNodes, freshOf: freshOf,
-    today: today, markToday: markToday, streak: streak, todayCount: todayCount, SEC_PER: SEC_PER,
+    today: today, markToday: markToday, streak: streak, todayCount: todayCount, tier: tier, tierOn: tierOn, setTierOn: setTierOn, days: days, SEC_PER: SEC_PER,
     placementSet: placementSet, setPlacement: setPlacement, placement: function () { return S.place || null; },
-    TRACKS: TRACKS, track: track, setTrack: setTrack, goal: goal, goalMark: goalMark, setGoal: setGoal, dday: dday,
+    track: track, setTrack: setTrack, exam: exam, setExam: setExam, subs: subs, cur: cur, setCur: setCur, seriesName: seriesName, goal: goal, goalMark: goalMark, setGoal: setGoal, dday: dday,
     minutes: minutes, setMinutes: setMinutes, name: name, setName: setName,
     onboarded: onboarded, setOnboarded: setOnboarded,
     skin: skin, setSkin: setSkin, SKINS: SKINS,

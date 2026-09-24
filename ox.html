@@ -24,11 +24,13 @@
 <body class="focus">
 <div class="page">
   <div class="hd"><h1 id="ttl">O·X</h1><span class="cnt num" id="cnt"></span><a class="x" href="index.html" title="그만하기">✕</a></div>
-  <div class="prog" id="prog"></div>
+  <div class="stones" id="prog"></div>
   <div id="stage"></div>
 </div>
 
-<script src="js/data.js"></script>
+<script src="js/catalog.js"></script>
+<script src="data/ready.js"></script>
+<script src="js/boot.js"></script>
 <script src="js/judge.js"></script>
 <script src="js/store.js"></script>
 <script>
@@ -85,17 +87,14 @@
   function drawProg() {
     var n = seq.length;
     $("cnt").textContent = n ? Math.min(pos + 1, n) + " / " + n : "";
-    if (n > 20) {                              /* 칸이 너무 많으면 막대 하나로 */
-      var ok = results.filter(function (r) { return r.ok; }).length;
-      $("prog").innerHTML = '<div class="bar" style="flex:1"><i style="width:' + Math.round(pos / n * 100) + '%"></i></div>';
-      return;
-    }
+    /* 일자 징검다리(선호대장 1차) — 남은 문항이 반드시 보이게. 많으면 지금 자리 둘레 18칸만 */
+    var from = Math.max(0, Math.min(pos - 6, n - 18)), to = Math.min(n, from + 18);
     var h = "";
-    for (var i = 0; i < n; i++) {
+    for (var i = from; i < to; i++) {
       var r = results[i];
       h += "<i class=\"" + (r ? (r.kind === "오개념" ? "warn" : r.ok ? "ok" : "no") : i === pos ? "now" : "") + "\"></i>";
     }
-    $("prog").innerHTML = h;
+    $("prog").innerHTML = h + '<span class="left">남은 ' + Math.max(0, n - pos - (results[pos] ? 1 : 0)) + "개</span>";
   }
 
   function nodeChip(no) { var n = GB.node(no); return n ? '<span class="chip">' + esc(n.name) + "</span>" : ""; }
@@ -128,10 +127,10 @@
         (q.sa ? '<div class="case"><b>사례</b>' + esc(q.sa) + "</div>" : "") +
         '<p class="sent" id="sent">' + esc(q.t) + "</p></div>" +
       '<div class="step"><h3>얼마나 확실해요?</h3><div class="conf" id="conf">' +
-        JUDGE.확신단계.map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
+        [{ v: "sure", name: "확실해요" }, { v: "half", name: "헷갈려요" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
       "</div></div>" +
       '<div class="oxb lock" id="oxb"><button type="button" data-a="O">O</button><button type="button" data-a="X">X</button></div>' +
-      '<p class="hint" id="hint">확신도를 먼저 고르면 O·X 가 열려요</p>' +
+      '<p class="hint" id="hint">확실한지 먼저 골라요</p>' +
       '<div id="after"></div>';
     var cb = $("conf").querySelectorAll("button");
     cb.forEach(function (b) {
@@ -157,6 +156,7 @@
         streakBy[q.n] = ok ? 0 : (streakBy[q.n] || 0) + 1;
         GB.answer(q.i, ok, { conf: conf, ms: ms, kind: j.kind });
         results[pos] = { ok: ok, kind: j.kind, id: q.i };
+        document.querySelector(".qcard").classList.add(ok ? "glow-ok" : "glow-no");
         if (mode === "today") GB.markToday(todayIdx[pos]);
         drawProg();
 
@@ -168,19 +168,21 @@
         }
 
         var h = '<div class="verdict ' + j.tone + '"><div class="top"><span class="mk">' + (ok ? "O" : "✕") + "</span>" +
-          '<span class="chip">' + esc(j.label || { "재시도정답": "다시 풀어 맞힘", "연속오답": "연속 오답" }[j.kind] || j.kind) + "</span></div>" +
+          (ok ? '<span class="reward">+1</span>' : "") + '<span class="chip">' + esc(j.label || { "재시도정답": "다시 풀어 맞힘", "연속오답": "연속 오답" }[j.kind] || j.kind) + "</span></div>" +
           '<p class="say">' + esc(j.say) + "</p>" +
           '<p class="ans">정답은 <b>' + q.ox + "</b>" + (q.ox === "X" ? " — 이 문장은 틀린 문장이에요." : " — 맞는 문장이에요.") + "</p>";
+        var 해설 = "";
         var p = pairOf(q.i);
         if (p) {
           var d = GB.markDiff(p.o.t, p.x.t);
-          h += '<div class="pair"><div class="lab">헷갈리는 짝 — 갈리는 마디에 칠했어요</div>' +
+          해설 += '<div class="pair"><div class="lab">헷갈리는 짝 — 갈리는 마디에 칠했어요</div>' +
                '<p><b style="color:var(--ok)">맞음</b> ' + d[0] + "</p>" +
                '<p><b style="color:var(--no)">틀림</b> ' + d[1] + "</p></div>";
         } else if (q.ox === "X") {
           var o = nearestO(q);
-          if (o) h += '<div class="pair"><div class="lab">같은 쟁점의 맞는 기출 문장 · ' + esc(GB.src(o)) + "</div><p>" + GB.markDiff(o.t, q.t)[0] + "</p></div>";
+          if (o) 해설 += '<div class="pair"><div class="lab">같은 쟁점의 맞는 기출 문장 · ' + esc(GB.src(o)) + "</div><p>" + GB.markDiff(o.t, q.t)[0] + "</p></div>";
         }
+        if (해설) h += '<div class="expl" id="expl"><button type="button">해설 보기</button><div class="body">' + 해설 + "</div></div>";
         if (extra) h += '<p class="more">' + esc(GB.node(q.n).name) + " 문장 하나를 바로 뒤에 넣었어요.</p>";
         h += "</div>";
         var readBtn = (j.next === "concept" || j.next === "lecture")
@@ -188,6 +190,7 @@
         h += '<div class="acts">' + readBtn + '<button class="btn" id="nx">다음</button></div>';
         $("after").innerHTML = h;
         $("nx").onclick = next;
+        if ($("expl")) $("expl").firstChild.onclick = function () { $("expl").classList.toggle("open"); this.textContent = $("expl").classList.contains("open") ? "해설 접기" : "해설 보기"; };
         if ($("read")) $("read").onclick = function () { showRead(q.n, true); };
         $("nx").focus({ preventScroll: true });
         $("after").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -308,7 +311,7 @@
   document.addEventListener("keydown", function (e) {
     if (e.target.tagName === "INPUT") return;
     var k = e.key.toLowerCase();
-    if (k === "1" || k === "2" || k === "3") { var b = document.querySelectorAll("#conf button")[+k - 1]; if (b) b.click(); }
+    if (k === "1" || k === "2") { var b = document.querySelectorAll("#conf button")[+k - 1]; if (b) b.click(); }
     else if (k === "o") { var o = document.querySelector('#oxb [data-a="O"]'); if (o) o.click(); }
     else if (k === "x") { var x = document.querySelector('#oxb [data-a="X"]'); if (x) x.click(); }
     else if (k === "enter") { var n = $("nx"); if (n) { e.preventDefault(); n.click(); } }
