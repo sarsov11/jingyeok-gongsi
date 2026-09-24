@@ -131,6 +131,7 @@
       '<div class="qcard"><div class="src">' + nodeChip(q.n) + '<span class="chip">' + esc(GB.src(q)) + "</span>" +
         (s.re ? '<span class="chip cta">다시 보기</span>' : "") + "</div>" +
         (q.sa ? '<div class="case"><b>사례</b>' + esc(q.sa) + "</div>" : "") +
+        (q.tp ? '<div class="topic">' + esc(q.tp) + "</div>" : "") +
         '<p class="sent" id="sent">' + esc(mc ? mc.s : q.t) + "</p>" +
         (mc && mc.d ? '<div class="case mcdata" style="margin:12px 0 0">' + esc(mc.d) + "</div>" : "") + "</div>" +
       '<div class="step"><h3>얼마나 확실해요?</h3><div class="conf" id="conf">' +

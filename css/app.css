@@ -242,3 +242,6 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 .mcb button[data-s="no"]{border:3px solid var(--no);background:var(--no-soft)}
 .mcb.lock{opacity:.35;pointer-events:none}
 .mcdata{white-space:pre-wrap;font-size:15px;line-height:1.75}
+
+/* 발문 주제 — 선지가 주제를 받아 쓰는 과목(행정학 등) */
+.topic{display:inline-block;font-size:15px;font-weight:900;color:var(--ink);background:var(--surface-3);border-radius:var(--r1);padding:3px 10px;margin-bottom:10px}

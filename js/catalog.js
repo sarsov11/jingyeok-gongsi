@@ -25,13 +25,11 @@
     welfare:{ name: "사회복지학개론" },
     acct:   { name: "회계학" },
     tax:    { name: "세법개론" },
-    ltax:   { name: "지방세법" },
     corr:   { name: "교정학개론" },
     cpro:   { name: "형사소송법개론" },
-    comp:   { name: "컴퓨터일반" },
-    infosec:{ name: "정보보호론" },
-    health: { name: "공중보건" },
-    hadmin: { name: "보건행정" }
+    crimlaw:{ name: "형법" },
+    intl:   { name: "국제법개론" },
+    customs:{ name: "관세법개론" }
   };
 
   /* 시험 — 직렬이 하나면 series 를 두지 않는다 */
@@ -40,19 +38,22 @@
       subs: ["fire1", "fire2", "admin"] },
     { id: "police", name: "경찰 공채", sub: "순경 · 일반", date: "2027-03-13",
       subs: ["const", "crim", "police"] },
+    /* 9급 직렬 — 2025년 접수 1,000명 이상인 일반전형(수집\직렬별_응시인원_2025.md, 2차 출처라 원문 대조 전) */
     { id: "n9", name: "국가직 9급", sub: "인사혁신처", date: "2027-04-03", series: [
-      { id: "gen",   name: "일반행정", subs: ["kor", "eng", "admin", "pub"] },
-      { id: "edu",   name: "교육행정", subs: ["kor", "eng", "edu", "admin"] },
-      { id: "tax",   name: "세무",     subs: ["kor", "eng", "tax", "acct"] },
-      { id: "corr",  name: "교정",     subs: ["kor", "eng", "corr", "cpro"] },
-      { id: "comp",  name: "전산",     subs: ["kor", "eng", "comp", "infosec"] }
+      { id: "gen",     name: "일반행정",   subs: ["kor", "eng", "admin", "pub"] },
+      { id: "tax",     name: "세무",       subs: ["kor", "eng", "tax", "acct"] },
+      { id: "corr",    name: "교정",       subs: ["kor", "eng", "corr", "cpro"] },
+      { id: "pros",    name: "검찰",       subs: ["kor", "eng", "crimlaw", "cpro"] },
+      { id: "npa",     name: "경찰청 일반", subs: ["kor", "eng", "admin", "pub"] },
+      { id: "edu",     name: "교육행정",   subs: ["kor", "eng", "edu", "admin"] },
+      { id: "imm",     name: "출입국관리", subs: ["kor", "eng", "intl", "admin"] },
+      { id: "cus",     name: "관세",       subs: ["kor", "eng", "customs", "acct"] }
     ] },
     { id: "l9", name: "지방직 9급", sub: "시·도", date: "2027-06-19", series: [
-      { id: "gen",     name: "일반행정", subs: ["kor", "eng", "admin", "pub"] },
-      { id: "welfare", name: "사회복지", subs: ["kor", "eng", "welfare", "admin"] },
-      { id: "ltax",    name: "지방세",   subs: ["kor", "eng", "ltax", "acct"] },
-      { id: "edu",     name: "교육행정", subs: ["kor", "eng", "edu", "admin"] },
-      { id: "health",  name: "보건",     subs: ["kor", "eng", "health", "hadmin"] }
+      { id: "gen",     name: "일반행정",   subs: ["kor", "eng", "admin", "pub"] },
+      { id: "edu",     name: "교육행정",   subs: ["kor", "eng", "edu", "admin"] },
+      { id: "welfare", name: "사회복지",   subs: ["kor", "eng", "welfare", "admin"] },
+      { id: "tax",     name: "세무",       subs: ["kor", "eng", "tax", "acct"] }
     ] }
   ];
 
