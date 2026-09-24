@@ -116,7 +116,7 @@
         '<div class="body"><div class="opts">' + ss.map(function (k) {
           var r = CATALOG.ready(k);
           return '<button type="button" disabled style="cursor:default;opacity:1">' + CATALOG.name(k) + "<small>" +
-            (r ? "기출 문장 " + GB.num(CATALOG.count(k)) + "개" : "준비 중") + "</small></button>";
+            (r ? "기출 " + GB.num(CATALOG.count(k)) + "개" : "준비 중") + "</small></button>";
         }).join("") + "</div></div>" +
         '<div class="foot"><button class="btn block" id="n">좋아요</button></div>';
       $("n").onclick = nextStep;
