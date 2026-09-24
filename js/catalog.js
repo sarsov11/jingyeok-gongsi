@@ -29,7 +29,8 @@
     cpro:   { name: "형사소송법개론" },
     crimlaw:{ name: "형법" },
     intl:   { name: "국제법개론" },
-    customs:{ name: "관세법개론" }
+    customs:{ name: "관세법개론" },
+    ltax:   { name: "지방세법" }
   };
 
   /* 시험 — 직렬이 하나면 series 를 두지 않는다 */
@@ -53,7 +54,7 @@
       { id: "gen",     name: "일반행정",   subs: ["kor", "eng", "admin", "pub"] },
       { id: "edu",     name: "교육행정",   subs: ["kor", "eng", "edu", "admin"] },
       { id: "welfare", name: "사회복지",   subs: ["kor", "eng", "welfare", "admin"] },
-      { id: "tax",     name: "세무",       subs: ["kor", "eng", "tax", "acct"] }
+      { id: "tax",     name: "세무",       subs: ["kor", "eng", "ltax", "acct"] }
     ] }
   ];
 
