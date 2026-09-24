@@ -121,15 +121,22 @@
     var q = GB.item(s.id);
     if (!q) { next(); return; }
     var conf = null, t0 = Date.now(), done = false;
+    /* 기출 풀기(4지선다) — 국어·영어처럼 한 문장으로 못 자르는 문항. q.mc = {s:발문, d:자료, o:[선지 4], a:정답 1~4} */
+    var mc = q.mc, 정답 = mc ? String(mc.a) : q.ox;
+    var 단추 = mc
+      ? '<div class="mcb lock" id="oxb">' + mc.o.map(function (o, i) {
+          return '<button type="button" data-a="' + (i + 1) + '"><b>' + "①②③④⑤"[i] + "</b><span>" + esc(o) + "</span></button>"; }).join("") + "</div>"
+      : '<div class="oxb lock" id="oxb"><button type="button" data-a="O">O</button><button type="button" data-a="X">X</button></div>';
     $("stage").innerHTML =
       '<div class="qcard"><div class="src">' + nodeChip(q.n) + '<span class="chip">' + esc(GB.src(q)) + "</span>" +
         (s.re ? '<span class="chip cta">다시 보기</span>' : "") + "</div>" +
         (q.sa ? '<div class="case"><b>사례</b>' + esc(q.sa) + "</div>" : "") +
-        '<p class="sent" id="sent">' + esc(q.t) + "</p></div>" +
+        '<p class="sent" id="sent">' + esc(mc ? mc.s : q.t) + "</p>" +
+        (mc && mc.d ? '<div class="case mcdata" style="margin:12px 0 0">' + esc(mc.d) + "</div>" : "") + "</div>" +
       '<div class="step"><h3>얼마나 확실해요?</h3><div class="conf" id="conf">' +
         [{ v: "sure", name: "확실해요" }, { v: "half", name: "헷갈려요" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
       "</div></div>" +
-      '<div class="oxb lock" id="oxb"><button type="button" data-a="O">O</button><button type="button" data-a="X">X</button></div>' +
+      단추 +
       '<p class="hint" id="hint">확실한지 먼저 골라요</p>' +
       '<div id="after"></div>';
     var cb = $("conf").querySelectorAll("button");
@@ -145,10 +152,10 @@
       b.onclick = function () {
         if (done || !conf) return;
         done = true;
-        var pick = b.dataset.a, ok = pick === q.ox, ms = Date.now() - t0;
+        var pick = b.dataset.a, ok = pick === 정답, ms = Date.now() - t0;
         $("oxb").querySelectorAll("button").forEach(function (x) {
           x.disabled = true;
-          if (x.dataset.a === q.ox) x.dataset.s = "ok"; else if (x === b) x.dataset.s = "no";
+          if (x.dataset.a === 정답) x.dataset.s = "ok"; else if (x === b) x.dataset.s = "no";
         });
         var st = GB.nodeStat(q.n), prev = GB.answered(q.i);
         var j = JUDGE.판정({ ok: ok, conf: conf, ms: ms, attempt: prev ? prev.n + 1 : 1, mastery: st.mastery,
@@ -170,7 +177,7 @@
         var h = '<div class="verdict ' + j.tone + '"><div class="top"><span class="mk">' + (ok ? "O" : "✕") + "</span>" +
           (ok ? '<span class="reward">+1</span>' : "") + '<span class="chip">' + esc(j.label || { "재시도정답": "다시 풀어 맞힘", "연속오답": "연속 오답" }[j.kind] || j.kind) + "</span></div>" +
           '<p class="say">' + esc(j.say) + "</p>" +
-          '<p class="ans">정답은 <b>' + q.ox + "</b>" + (q.ox === "X" ? " — 이 문장은 틀린 문장이에요." : " — 맞는 문장이에요.") + "</p>";
+          '<p class="ans">정답은 <b>' + (mc ? "①②③④⑤"[+정답 - 1] : q.ox) + "</b>" + (mc ? "" : q.ox === "X" ? " — 이 문장은 틀린 문장이에요." : " — 맞는 문장이에요.") + "</p>";
         var 해설 = "";
         var p = pairOf(q.i);
         if (p) {
@@ -178,7 +185,7 @@
           해설 += '<div class="pair"><div class="lab">헷갈리는 짝 — 갈리는 마디에 칠했어요</div>' +
                '<p><b style="color:var(--ok)">맞음</b> ' + d[0] + "</p>" +
                '<p><b style="color:var(--no)">틀림</b> ' + d[1] + "</p></div>";
-        } else if (q.ox === "X") {
+        } else if (!mc && q.ox === "X") {
           var o = nearestO(q);
           if (o) 해설 += '<div class="pair"><div class="lab">같은 쟁점의 맞는 기출 문장 · ' + esc(GB.src(o)) + "</div><p>" + GB.markDiff(o.t, q.t)[0] + "</p></div>";
         }
@@ -252,7 +259,7 @@
   /* ── 60초 스피드 — 확신도 없이, 반응만 ── */
   function runSpeed() {
     var pool = [];
-    GB.focusNodes(6).forEach(function (n) { pool = pool.concat(GB.qs(n.no).filter(function (q) { return q.t.length <= 80 && !q.sa; })); });
+    GB.focusNodes(6).forEach(function (n) { pool = pool.concat(GB.qs(n.no).filter(function (q) { return q.t.length <= 80 && !q.sa && !q.mc; })); });
     shuffle(pool, Date.now() % 997);
     var end = Date.now() + 60000, i = 0, ok = 0, n = 0;
     function one() {

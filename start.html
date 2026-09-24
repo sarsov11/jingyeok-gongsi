@@ -150,6 +150,7 @@
       if (mine.length && mine.indexOf(GB.cur()) < 0) { location.replace("start.html?s=" + mine[0] + "&step=check"); return; }
       if (!mine.length) return go(STEPS.indexOf("done"));
       var set = GB.placementSet(20), i = 0, timer = null, t0 = 0;
+      if (set.length < 5) return go(STEPS.indexOf("done"));   /* O·X 문장이 없는 과목 — 실력 확인 없이 시작 */
       function one() {
         if (i >= set.length) { clearInterval(timer); return fin(); }
         var q = set[i]; t0 = Date.now();

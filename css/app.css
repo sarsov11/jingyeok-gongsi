@@ -231,3 +231,14 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 .cal i.today{outline:2px solid var(--ink);outline-offset:-2px}
 .cal i.blank{background:none}
 .cal b{font-size:12px;text-align:center;color:var(--ink-3)}
+
+/* 기출 풀기(4지선다) */
+.mcb{display:grid;gap:8px;margin-top:10px}
+.mcb button{appearance:none;text-align:left;border:2px solid var(--line-2);background:var(--surface-2);color:var(--ink);
+  border-radius:var(--r3);padding:14px 16px;font-size:16.5px;line-height:1.6;font-weight:600;cursor:pointer;display:flex;gap:10px}
+.mcb button b{flex:none;font-weight:900}
+.mcb button:disabled{cursor:default}
+.mcb button[data-s="ok"]{border:3px solid var(--ok);background:var(--ok-soft)}
+.mcb button[data-s="no"]{border:3px solid var(--no);background:var(--no-soft)}
+.mcb.lock{opacity:.35;pointer-events:none}
+.mcdata{white-space:pre-wrap;font-size:15px;line-height:1.75}

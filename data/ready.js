@@ -1,2 +1,2 @@
 /* 자동 생성 — 파이프라인 산출물 */
-window.READY={"admin": {"name": "행정법총론", "n": 3037, "v": "e120e2f9"}, "const": {"name": "헌법", "n": 1958, "v": "746778fe"}};
+window.READY={"admin": {"name": "행정법총론", "n": 3037, "v": "e120e2f9"}, "const": {"name": "헌법", "n": 1958, "v": "746778fe"}, "fire1": {"name": "소방학개론", "n": 392, "v": "aea8da8c"}, "fire2": {"name": "소방관계법규", "n": 356, "v": "dd641f43"}};

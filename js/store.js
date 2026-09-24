@@ -278,12 +278,13 @@
     /* ★ O·X 를 반반으로 — 전체 선지는 O 가 60%라 그냥 뽑으면 "다 O" 로 찍어도 점수가 난다(2026-09-23 실측 14/20) */
     return picks.map(function (n, i) {
       var want = i % 2 ? "X" : "O";
-      var c = qs(n.no).filter(function (q) { return q.c === "A" && !q.sa && q.t.length <= 90 && q.t.length >= 25; });
-      if (!c.length) c = qs(n.no);
+      var c = qs(n.no).filter(function (q) { return q.c === "A" && !q.sa && !q.mc && q.t.length <= 90 && q.t.length >= 25; });
+      if (!c.length) c = qs(n.no).filter(function (q) { return !q.mc; });
+      if (!c.length) return null;            /* 기출 풀기만 있는 과목(국어·영어)은 실력 확인에 안 쓴다 */
       var w = c.filter(function (q) { return q.ox === want; });
       if (w.length) c = w;
       return c[(seed + n.no * 7) % c.length];
-    });
+    }).filter(Boolean);
   }
   function setPlacement(rec) {
     /* rec = [{id, ok, ms, to}] */
