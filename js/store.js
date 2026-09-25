@@ -376,7 +376,7 @@
     return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function num(n) { return (n || 0).toLocaleString("ko-KR"); }
-  function src(q) { return (q.lv === 0 ? "기초 · " : q.lv === 2 ? "심화 · " : q.lv === 3 ? "최상 · " : "") + (q.y ? q.y + " " : "") + (q.e || "") + (q.qn ? " " + q.qn + "번" : "") + (q.m ? " " + q.m : ""); }
+  function src(q) { return (q.lv === 0 ? "기초 · " : q.lv === 2 ? "심화 · " : q.lv === 3 ? "최상 · " : "") + (q.y ? q.y + " " : "") + (q.e || "") + (q.qn ? " " + q.qn + "번" : "") + (q.m ? " " + q.m : "") + (q.rv ? " · 개정 반영" : ""); }
 
   /* 받침 보고 조사 — "처분성을" / "공정력을" / "행정심판을" */
   function josa(w, a, b) {

@@ -75,7 +75,7 @@
       $("n").onclick = nextStep;
     },
     name: function () {
-      $("scr").innerHTML = "<h1>뭐라고 부를까요?</h1><p class=\"lead\">홈에서 이 이름으로 불러요. 비워 둬도 돼요.</p>" +
+      $("scr").innerHTML = "<h1>이름</h1>" +
         '<div class="body"><input type="text" id="nm" maxlength="12" placeholder="닉네임" value="' + esc(GB.name()) + '"></div>' +
         '<div class="foot"><button class="btn block" id="n">다음</button></div>';
       $("nm").focus();
@@ -85,7 +85,7 @@
     exam: function () {
       var cur = null;
       try { cur = (JSON.parse(localStorage.getItem("jg.pref.v1") || "{}").exam) || null; } catch (e) {}
-      $("scr").innerHTML = "<h1>어떤 시험을 봐요?</h1><p class=\"lead\">시험에 맞춰 과목과 기출을 골라 드려요.</p>" +
+      $("scr").innerHTML = "<h1>시험</h1>" +
         '<div class="body"><div class="opts" id="op">' + CATALOG.EXAMS.map(function (e) {
           return '<button type="button" data-v="' + e.id + '" aria-pressed="' + (e.id === cur) + '">' + e.name + "<small>" + e.sub + "</small></button>";
         }).join("") + "</div></div>";
@@ -101,7 +101,7 @@
     series: function () {
       var e = GB.exam();
       if (!e.series) return go(STEPS.indexOf("subs"));
-      $("scr").innerHTML = "<h1>어느 직렬이에요?</h1><p class=\"lead\">" + esc(e.name) + " — 직렬마다 전문과목이 달라요.</p>" +
+      $("scr").innerHTML = "<h1>직렬</h1><p class=\"lead\">" + esc(e.name) + "</p>" +
         '<div class="body"><div class="opts" id="op">' + e.series.map(function (x) {
           return '<button type="button" data-v="' + x.id + '">' + x.name + "<small>" +
             x.subs.map(function (k) { return CATALOG.name(k); }).join(" · ") + "</small></button>";
