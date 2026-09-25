@@ -157,7 +157,7 @@
   /* ── 문장 고르기 ──
      같은 쟁점이면 **내 직렬 기출 → 최근 연도 → 배정이 확실한 것** 순으로 먼저 낸다. */
   function rank(q) {
-    var s = -((q.lv || 1) - 1) * 10;      /* 수준 — 기본(9급)이 늘 먼저 */
+    var l = LV(q), s = l === 1 ? 0 : l === 0 ? -5 : -(l - 1) * 10;   /* 수준 — 기본(9급)이 늘 먼저, 기초(전산회계 등)는 그다음, 심화·최상은 뒤 */
     if (q.e === exam().name) s += 4;
     s += Math.max(0, (q.y || 2015) - 2015) * 0.3;
     if (q.c === "A") s += 1;
@@ -165,14 +165,15 @@
   }
   /* ★ 수준 열기(0925) — 7급(lv2)·세무사(lv3) 문장은 그 쟁점의 아래 수준 문장을 7할 넘게 푼 뒤에 낸다.
      같은 세법이라도 시험마다 난도·문체가 달라 섞어 내면 9급 수험생이 초반에 무너진다. */
+  function LV(q) { return q.lv == null ? 1 : q.lv; }        /* 0 = 기초 · 1 = 기본(표시 안 함) · 2 = 심화 · 3 = 최상 */
   function lvOpen(no, lv) {
     if (lv <= 1) return true;
-    var lo = qs(no).filter(function (q) { return (q.lv || 1) < lv; });
+    var lo = qs(no).filter(function (q) { var l = LV(q); return l >= 1 && l < lv; });
     if (!lo.length) return true;
     return lo.filter(function (q) { return S.ans[q.i]; }).length / lo.length >= 0.7;
   }
   function freshOf(no, k) {
-    return qs(no).filter(function (q) { return !S.ans[q.i] && lvOpen(no, q.lv || 1); })
+    return qs(no).filter(function (q) { return !S.ans[q.i] && lvOpen(no, LV(q)); })
       .sort(function (a, b) { return rank(b) - rank(a); }).slice(0, k);
   }
   /* 오늘 볼 복습 — 기한이 된 것. 틀린 것(0칸)이 먼저 */
@@ -291,8 +292,8 @@
     /* ★ O·X 를 반반으로 — 전체 선지는 O 가 60%라 그냥 뽑으면 "다 O" 로 찍어도 점수가 난다(2026-09-23 실측 14/20) */
     return picks.map(function (n, i) {
       var want = i % 2 ? "X" : "O";
-      var c = qs(n.no).filter(function (q) { return q.c === "A" && !q.sa && !q.mc && !q.lv && q.t.length <= 90 && q.t.length >= 25; });
-      if (!c.length) c = qs(n.no).filter(function (q) { return !q.mc && !q.lv; });
+      var c = qs(n.no).filter(function (q) { return q.c === "A" && !q.sa && !q.mc && q.lv == null && q.t.length <= 90 && q.t.length >= 25; });
+      if (!c.length) c = qs(n.no).filter(function (q) { return !q.mc && q.lv == null; });
       if (!c.length) return null;            /* 기출 풀기만 있는 과목(국어·영어)은 실력 확인에 안 쓴다 */
       var w = c.filter(function (q) { return q.ox === want; });
       if (w.length) c = w;
@@ -375,7 +376,7 @@
     return String(t == null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
   function num(n) { return (n || 0).toLocaleString("ko-KR"); }
-  function src(q) { return (q.lv === 2 ? "심화 · " : q.lv === 3 ? "최상 · " : "") + (q.y ? q.y + " " : "") + (q.e || "") + (q.qn ? " " + q.qn + "번" : "") + (q.m ? " " + q.m : ""); }
+  function src(q) { return (q.lv === 0 ? "기초 · " : q.lv === 2 ? "심화 · " : q.lv === 3 ? "최상 · " : "") + (q.y ? q.y + " " : "") + (q.e || "") + (q.qn ? " " + q.qn + "번" : "") + (q.m ? " " + q.m : ""); }
 
   /* 받침 보고 조사 — "처분성을" / "공정력을" / "행정심판을" */
   function josa(w, a, b) {
