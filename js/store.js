@@ -6,7 +6,7 @@
 
    모두의 통사(0918~0922)에서 굳은 것을 그대로 옮겼다 —
      · 학생에게 고르게 하지 않는다. 홈은 「오늘 할 것」 하나.
-     · 분량은 문항 수가 아니라 **시간**으로 말한다(하루 10·15·20·30분).
+     · 분량은 문항 수가 아니라 **시간**으로 말한다(전업 수험생 기준 하루 3·4·5시간, 추천 4시간).
      · 판정은 확신도 × 정오답(judge.js). 확신도는 답보다 먼저 묻는다.
      · 되돌리기(간격 복습)가 새 문장보다 먼저다.
    ═══════════════════════════════════════════════════════════ */
@@ -77,7 +77,10 @@
   function setGoal(d, mine) { P.goal = d || null; P.goalMine = !!mine; savePref(); }
   function dday() { return dayNo(goal()) - TODAYN; }
 
-  function minutes() { return P.minutes || 15; }
+  /* 하루 시간(분). 전업 수험생 기준 3·4·5시간, 추천 4시간. 3시간 미만으로 저장된 옛 설정은 4시간으로 본다. */
+  var MIN_OPTS = [180, 240, 300], MIN_REC = 240;
+  function minutes() { var m = +P.minutes; return (m >= MIN_OPTS[0]) ? m : MIN_REC; }
+  function hm(m) { var h = Math.floor(m / 60), r = m % 60; return r ? h + "시간 " + r + "분" : h + "시간"; }
   function setMinutes(m) { P.minutes = m; savePref(); delete S.today; save(); }
   function name() { return P.name || ""; }
   function setName(v) { P.name = String(v || "").trim().slice(0, 12); savePref(); }
@@ -202,13 +205,13 @@
 
   /* ── 오늘 할 것 ──
      ★ 분량은 시간이다. 한 문장 O·X 는 확신도 + 답 + 판정 읽기로 20초쯤 걸린다고 어림한다
-       (실측 전 어림값 — 화면에도 '약'을 붙인다). 15분 → 45문장.
+       (실측 전 어림값 — 화면에도 '약'을 붙인다). 4시간 → 720문장.
      ★ 하루에 한 번 정하고 저장한다. 새로고침마다 바뀌면 학생이 끝을 못 본다. */
   var SEC_PER = 20, SEC_MC = 60;
   function today() {
     if (S.today && S.today.date === TODAY && S.today.min === minutes()) return decorate(S.today);
     /* ★ 분량은 시간(초)으로 채운다 — 한 문장 O·X 약 20초, 기출 풀기(지문·4지선다) 약 60초(어림값, 실측 전).
-       국어·영어처럼 기출 풀기만 있는 과목에서 15분에 45문항을 내면 끝을 못 본다(0924). */
+       국어·영어처럼 기출 풀기만 있는 과목에서 시간에 비해 문항을 많이 내면 끝을 못 본다(0924). */
     function 초(id) { var q = ITEM[id]; return q && q.mc ? SEC_MC : SEC_PER; }
     var 예산 = minutes() * 60, 쓴 = 0;
     var due = [];
@@ -406,7 +409,7 @@
     today: today, markToday: markToday, streak: streak, todayCount: todayCount, tier: tier, tierOn: tierOn, setTierOn: setTierOn, days: days, SEC_PER: SEC_PER,
     placementSet: placementSet, setPlacement: setPlacement, placement: function () { return S.place || null; },
     track: track, setTrack: setTrack, exam: exam, setExam: setExam, subs: subs, cur: cur, setCur: setCur, seriesName: seriesName, goal: goal, goalMark: goalMark, setGoal: setGoal, dday: dday,
-    minutes: minutes, setMinutes: setMinutes, name: name, setName: setName,
+    minutes: minutes, setMinutes: setMinutes, MIN_OPTS: MIN_OPTS, MIN_REC: MIN_REC, hm: hm, name: name, setName: setName,
     onboarded: onboarded, setOnboarded: setOnboarded,
     skin: skin, setSkin: setSkin, SKINS: SKINS,
     mountNav: mountNav, mountNext: mountNext,
