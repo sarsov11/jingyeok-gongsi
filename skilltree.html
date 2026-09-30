@@ -267,14 +267,6 @@
     return "hsl("+F.h+" "+Math.round(F.s*(pp?k.pm:k.m))+"% "+(pp?k.pl-d:k.l+d)+"%)";
   }
   function tierOf(a,played){ return !played?"L":a>=80?"S":a>=60?"A":a>=30?"B":"C"; }
-  function howFar(st){
-    if(!st.n) return "붙은 기출 선지가 없어요";
-    if(!st.solved) return "아직 시작 전이에요";
-    if(st.achieve<30) return "이제 막 시작했어요";
-    if(st.achieve<60) return "절반쯤 왔어요";
-    if(st.achieve<80) return "감이 잡히고 있어요";
-    return "여기는 든든해요";
-  }
 
   /* ══ SVG ══ */
   var NS="http://www.w3.org/2000/svg";
@@ -541,7 +533,7 @@
     });
     var ps=GB.partStat(pno);
     coreOrb(g,hue,p.name,chs.length+"장 · 성취도 "+ps.achieve+"%",function(){ if(!busy) goAll(); });
-    var back=txt(g,"↑ 눌러서 전체로",{x:L.CX,y:L.CY+L.rCore+22,"text-anchor":"middle",
+    var back=txt(g,"전체 보기",{x:L.CX,y:L.CY+L.rCore+22,"text-anchor":"middle",
       fill:SINK2,"font-size":Math.round(L.fSub+1),"font-weight":600,
       "font-family":cv("--kr"),opacity:".85"});
     back.style.cursor="pointer";
@@ -593,7 +585,7 @@
     var st=GB.chStat(key);
     coreOrb(g,hue,c.name,m+"쟁점 · 성취도 "+st.achieve+"%",
       function(){ if(!busy) goPart(c.part,L.CX,L.CY); });
-    var back=txt(g,"↑ 눌러서 "+GB.part(c.part).name+" 로",{x:L.CX,y:L.CY+L.rCore+22,
+    var back=txt(g,GB.part(c.part).name+" 보기",{x:L.CX,y:L.CY+L.rCore+22,
       "text-anchor":"middle",fill:SINK2,"font-size":Math.round(L.fSub+1),"font-weight":600,
       "font-family":cv("--kr"),opacity:".85"});
     back.style.cursor="pointer";
@@ -649,9 +641,7 @@
     var c=document.getElementById("crumb");
     if(level===0){
       c.innerHTML='<span class="swapin">'+esc(T.subject)+'</span>';
-      document.getElementById("lede").textContent=
-        "시험 범위를 편·장·쟁점으로 갈라 놓았습니다 — 편 "+T.stat.parts+" · 장 "+T.stat.chs+
-        " · 쟁점 "+T.stat.nodes+"개 · 붙은 기출 선지 "+GB.num(ALL.n)+"개";
+      document.getElementById("lede").textContent="";
       document.getElementById("plateTitle").textContent=T.subject;
       document.getElementById("plateSub").textContent=GB.track().name;
     }else if(level===2&&chk){
@@ -661,8 +651,7 @@
         '<em class="swapin" style="font-style:normal;color:var(--red-2)">'+esc(ch.name)+'</em>';
       document.getElementById("upbtn").onclick=function(){ if(!busy) goAll(); };
       document.getElementById("uppart").onclick=function(){ if(!busy) goPart(ch.part,LAY.CX,LAY.CY); };
-      document.getElementById("lede").textContent=
-        "쟁점 "+ch.nodes.length+"개 · 학습 분량 "+st.vol+"쪽 · 붙은 기출 선지 "+st.n+"개";
+      document.getElementById("lede").textContent="";
       document.getElementById("plateTitle").textContent=ch.name;
       document.getElementById("plateSub").textContent="쟁점 "+ch.nodes.length;
     }else{
@@ -670,8 +659,7 @@
       c.innerHTML='<button class="up" id="upbtn">'+esc(T.subject)+'</button><span class="sep">›</span>'+
         '<em class="swapin" style="font-style:normal;color:var(--red-2)">'+esc(p.name)+'</em>';
       document.getElementById("upbtn").onclick=function(){ if(!busy) goAll(); };
-      document.getElementById("lede").textContent=
-        "장 "+chs.length+" · 쟁점 "+ps.nodes+" · 학습 분량 "+ps.vol+"쪽 · 붙은 기출 선지 "+ps.n+"개";
+      document.getElementById("lede").textContent="";
       document.getElementById("plateTitle").textContent=p.name;
       var weak=GB.nodes.filter(function(n){ return n.part===part&&GB.nodeStat(n.no).solved>0; })
         .sort(function(a,b){ return GB.nodeStat(a.no).achieve-GB.nodeStat(b.no).achieve; })[0];
@@ -737,8 +725,7 @@
       '<div><b>'+st.n+'</b><span>기출 선지</span></div>'+
       '<div><b>'+st.achieve+'%</b><span>성취도</span></div></div>'+
       '<div class="pk-keys">'+chs.slice(0,8).map(function(c){
-        return '<span class="pk-key">'+esc(c.name)+'</span>'; }).join("")+'</div>'+
-      '<div class="pk-foot">눌러서 들어가기</div>';
+        return '<span class="pk-key">'+esc(c.name)+'</span>'; }).join("")+'</div>';
     place(g);
   }
   function chPeek(c,g){
@@ -754,8 +741,7 @@
       '<div><b>'+st.n+'</b><span>기출 선지</span></div>'+
       '<div><b>'+st.achieve+'%</b><span>성취도</span></div></div>'+
       '<div class="pk-keys">'+list.slice(0,7).map(function(n){
-        return '<span class="pk-key">'+esc(n.title.slice(0,18))+'</span>'; }).join("")+'</div>'+
-      '<div class="pk-foot">눌러서 들어가기</div>';
+        return '<span class="pk-key">'+esc(n.title.slice(0,18))+'</span>'; }).join("")+'</div>';
     place(g);
   }
   function nodePeek(n,g){
@@ -768,14 +754,13 @@
     tc.style.color=(tier==="C"||tier==="L")?SBG2:SBG;
     document.getElementById("pkTitle").textContent=n.title;
     document.getElementById("pkQ").textContent=
-      "학습 분량 "+n.vol+"쪽 · 기출 선지 "+n.q+"개 · "+howFar(st);
+      "기출 선지 "+n.q+"개";
     document.getElementById("pkBody").innerHTML=
       '<div class="pk-stats"><div><b>'+n.vol+'</b><span>학습 분량</span></div>'+
       '<div><b>'+n.q+'</b><span>기출 선지</span></div>'+
       '<div><b>'+st.achieve+'%</b><span>성취도</span></div></div>'+
       '<div class="pk-keys">'+GB.qs(n.no).slice(0,3).map(function(q){
-        return '<span class="pk-key">'+esc(q.t.slice(0,26))+'…</span>'; }).join("")+'</div>'+
-      '<div class="pk-foot">눌러서 열기 · 판례 '+n.cs+' · 조문 '+n.law+'</div>';
+        return '<span class="pk-key">'+esc(q.t.slice(0,26))+'…</span>'; }).join("")+'</div>';
     place(g);
   }
   function hidePeek(){
@@ -797,21 +782,18 @@
       '<span class="fact">기출 선지 <b>'+n.q+'</b></span>'+
       '<span class="fact">판례 <b>'+n.cs+'</b></span>'+
       '<span class="fact">조문 <b>'+n.law+'</b></span>'+
-      '<span class="fact">'+howFar(st)+(st.solved?" · <b>"+st.achieve+"</b>%":"")+'</span>';
+      (st.solved?'<span class="fact">성취도 <b>'+st.achieve+'</b>%</span>':"");
     document.getElementById("shKeys").innerHTML="";
-    document.getElementById("shNote").innerHTML=
-      '<b>원 크기</b>는 기출 수가 아니라 <b>학습 분량</b>입니다 — '+
-      '기출 수로 재면 최근 몇 해에 몰린 쟁점이 실제보다 커집니다. '+
-      '기출 선지 수는 따로 셌습니다. 문장은 모두 <b>기출 원본</b>이고 O·X 는 그 시험의 정답표를 따릅니다.';
+    document.getElementById("shNote").innerHTML="";
     /* ★ 풀기 전에는 답을 보여 주지 않는다 — 옛 판은 선지 다섯 개를 O·X 와 함께 미리 보여 줘서
        바로 아래 「O·X 풀기」의 첫 문장들 답이 새었다(2026-09-23). 개수만 말한다. */
     document.getElementById("shList").innerHTML= qs.length
-      ? '<p style="font-size:14px;color:var(--ink-3)">이 쟁점의 기출 문장 '+qs.length+'개 — 답은 풀고 나서 보여 줘요.</p>'
-      : '<p style="font-size:14px;color:var(--ink-3)">이 쟁점에 붙은 기출 문장이 아직 없어요.</p>';
+      ? '<p style="font-size:14px;color:var(--ink-3)">기출 '+qs.length+'문장 풀기</p>'
+      : "";
     document.getElementById("shGo").innerHTML= qs.length
       ? '<a class="btn" href="ox.html?node='+n.no+'">이 쟁점 O·X 풀기</a>'+
         '<a class="btn ghost" href="ox.html?read='+n.no+'">맞는 문장 읽기</a>'
-      : '<span class="muted">이 쟁점은 아직 기출 문장이 없어요.</span>';
+      : "";
     sheet.hidden=false;
     requestAnimationFrame(function(){ sheet.classList.add("on"); });
     document.body.style.overflow="hidden";
@@ -879,15 +861,7 @@
             esc(x.name)+'</span>'; }).join(""))+size;
   }
   function note(){
-    var s=T.stat;
-    document.getElementById("note").innerHTML=
-      '<b>이 트리는 '+esc(T.subject)+' 시험 범위를 편 '+s.parts+' · 장 '+s.chs+' · 쟁점 '+s.nodes+
-      '개로 갈라 놓은 것</b>입니다. 장(중영역)은 편 안에서 쟁점을 묶기 위해 부여한 층입니다.<br>'+
-      '<b>원 크기는 기출 수가 아니라 학습 분량</b>입니다. 기출 수로 재면 최근 몇 해에 몰린 쟁점이 '+
-      '실제보다 커지고, 아직 선지가 안 붙은 쟁점은 점으로 사라집니다.<br>'+
-      '<b>기출 선지 '+GB.num(s.q)+'개</b>는 공개된 기출에서 뽑아 쟁점에 붙였습니다. O·X 판정은 '+
-      '그 시험의 정답표 그대로입니다.<br>'+
-      '성취도는 이 브라우저에 쌓인 학습 기록입니다 — 얼마나 풀었나 55, 얼마나 맞았나 45로 세고, 맞힌 비율은 열 문장을 풀 때까지 덜 셉니다.';
+    document.getElementById("note").innerHTML="";
   }
 
   /* ══ 시작 ══ */

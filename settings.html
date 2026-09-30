@@ -46,7 +46,7 @@
   </div></details>
 
   <details><summary>기록</summary><div class="in">
-    <div class="f"><label>기록 옮기기 — 이 글을 복사해 다른 기기의 같은 칸에 붙여 넣어요</label>
+    <div class="f"><label>기록 옮기기</label>
       <textarea id="ex" readonly></textarea>
       <div class="seg" style="margin-top:8px"><button type="button" id="cp">복사</button><button type="button" id="im">붙여 넣은 기록 되살리기</button></div>
       <p class="msg" id="msg"></p></div>
@@ -85,18 +85,18 @@
   seg($("skin"), GB.SKINS.map(function (s) { return { v: s.v, n: s.n, c: s.c }; }), GB.skin(), function (v) { GB.setSkin(v); });
 
   $("ex").value = GB.exportData();
-  $("cp").onclick = function () { $("ex").select(); try { navigator.clipboard.writeText($("ex").value); } catch (e) { document.execCommand("copy"); } $("msg").textContent = "복사했어요."; };
+  $("cp").onclick = function () { $("ex").select(); try { navigator.clipboard.writeText($("ex").value); } catch (e) { document.execCommand("copy"); } $("msg").textContent = "복사 완료"; };
   $("im").onclick = function () {
-    var t = prompt("다른 기기에서 복사한 기록을 붙여 넣어요");
+    var t = prompt("다른 기기에서 복사한 기록");
     if (!t) return;
-    try { GB.importData(t); $("msg").textContent = "되살렸어요."; setTimeout(function () { location.reload(); }, 600); }
-    catch (e) { $("msg").textContent = "형식이 달라요. 복사한 글 전체를 붙여 넣어요."; }
+    try { GB.importData(t); $("msg").textContent = "복원 완료"; setTimeout(function () { location.reload(); }, 600); }
+    catch (e) { $("msg").textContent = "형식 오류 — 복사한 글 전체 필요"; }
   };
   $("again").onclick = function () {
     try { var p = JSON.parse(localStorage.getItem("jg.pref.v1") || "{}"); delete p.onboarded; localStorage.setItem("jg.pref.v1", JSON.stringify(p)); } catch (e) {}
     location.href = "start.html";
   };
-  $("rs").onclick = function () { if (confirm("푼 기록을 전부 지울까요? 되돌릴 수 없어요.")) { GB.reset(); location.reload(); } };
+  $("rs").onclick = function () { if (confirm("푼 기록 전부 삭제 · 되돌릴 수 없음")) { GB.reset(); location.reload(); } };
 })();
 </script>
 </body>

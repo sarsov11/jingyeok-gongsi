@@ -58,7 +58,7 @@
     $("ttl").textContent = nd ? nd.name : "O·X";
   } else if (mode === "wrong") {
     seq = GB.wrongList().slice(0, 15).map(function (id) { return { k: "ox", id: id }; });
-    $("ttl").textContent = "틀린 문장 다시";
+    $("ttl").textContent = "오답 모아풀기";
   } else if (mode === "pair") {
     var pl = (nodeNo ? GB.pairs(nodeNo) : GB.pairs()).filter(function (p) { return !GB.state().pairs[p.id] || !GB.state().pairs[p.id].ok; });
     shuffle(pl, 17);
@@ -129,16 +129,16 @@
       : '<div class="oxb lock" id="oxb"><button type="button" data-a="O">O</button><button type="button" data-a="X">X</button></div>';
     $("stage").innerHTML =
       '<div class="qcard"><div class="src">' + nodeChip(q.n) + '<span class="chip">' + esc(GB.src(q)) + "</span>" +
-        (s.re ? '<span class="chip cta">다시 보기</span>' : "") + "</div>" +
+        (s.re ? '<span class="chip cta">복습</span>' : "") + "</div>" +
         (q.sa ? '<div class="case"><b>사례</b>' + esc(q.sa) + "</div>" : "") +
         (q.tp ? '<div class="topic">' + esc(q.tp) + "</div>" : "") +
         '<p class="sent" id="sent">' + esc(mc ? mc.s : q.t) + "</p>" +
         (mc && mc.d ? '<div class="case mcdata" style="margin:12px 0 0">' + esc(mc.d) + "</div>" : "") + "</div>" +
-      '<div class="step"><h3>얼마나 확실해요?</h3><div class="conf" id="conf">' +
-        [{ v: "sure", name: "확실해요" }, { v: "half", name: "헷갈려요" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
+      '<div class="step"><h3>확신도</h3><div class="conf" id="conf">' +
+        [{ v: "sure", name: "● 확실" }, { v: "half", name: "◐ 헷갈림" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
       "</div></div>" +
       단추 +
-      '<p class="hint" id="hint">확실한지 먼저 골라요</p>' +
+      '<p class="hint" id="hint"></p>' +
       '<div id="after"></div>';
     var cb = $("conf").querySelectorAll("button");
     cb.forEach(function (b) {
@@ -177,13 +177,13 @@
 
         var h = '<div class="verdict ' + j.tone + '"><div class="top"><span class="mk">' + (ok ? "O" : "✕") + "</span>" +
           (ok ? '<span class="reward">+1</span>' : "") + '<span class="chip">' + esc(j.label || { "재시도정답": "다시 풀어 맞힘", "연속오답": "연속 오답" }[j.kind] || j.kind) + "</span></div>" +
-          '<p class="say">' + esc(j.say) + "</p>" +
-          '<p class="ans">정답은 <b>' + (mc ? "①②③④⑤"[+정답 - 1] : q.ox) + "</b>" + (mc ? "" : q.ox === "X" ? " — 이 문장은 틀린 문장이에요." : " — 맞는 문장이에요.") + "</p>";
+          (j.say ? '<p class="say">' + esc(j.say) + "</p>" : "") +
+          '<p class="ans">정답 <b>' + (mc ? "①②③④⑤"[+정답 - 1] : q.ox) + "</b>" + "" + "</p>";
         var 해설 = "";
         var p = pairOf(q.i);
         if (p) {
           var d = GB.markDiff(p.o.t, p.x.t);
-          해설 += '<div class="pair"><div class="lab">헷갈리는 짝 — 갈리는 마디에 칠했어요</div>' +
+          해설 += '<div class="pair">' +
                '<p><b style="color:var(--ok)">맞음</b> ' + d[0] + "</p>" +
                '<p><b style="color:var(--no)">틀림</b> ' + d[1] + "</p></div>";
         } else if (!mc && q.ox === "X") {
@@ -191,7 +191,6 @@
           if (o) 해설 += '<div class="pair"><div class="lab">같은 쟁점의 맞는 기출 문장 · ' + esc(GB.src(o)) + "</div><p>" + GB.markDiff(o.t, q.t)[0] + "</p></div>";
         }
         if (해설) h += '<div class="expl" id="expl"><button type="button">해설 보기</button><div class="body">' + 해설 + "</div></div>";
-        if (extra) h += '<p class="more">' + esc(GB.node(q.n).name) + " 문장 하나를 바로 뒤에 넣었어요.</p>";
         h += "</div>";
         var readBtn = (j.next === "concept" || j.next === "lecture")
           ? '<button class="btn ghost" id="read">' + JUDGE.다음말[j.next].t + "</button>" : "";
@@ -214,7 +213,7 @@
     var A = flip ? [p.x, p.o] : [p.o, p.x], done = false;
     $("stage").innerHTML =
       '<div class="qcard"><div class="src">' + nodeChip(p.n) + '<span class="chip cta">헷갈리는 짝</span></div>' +
-      '<p class="sent" style="font-size:17px">두 기출 문장 중 <b>맞는 문장</b>을 고르세요.</p>' +
+      '<p class="sent" style="font-size:17px"><b>맞는 문장</b> 선택</p>' +
       '<div class="two" id="two">' + A.map(function (x, i) {
         return '<button type="button" data-i="' + x.i + '"><b>' + "가나"[i] + '</b><span class="tx">' + esc(x.t) + "</span></button>";
       }).join("") + "</div></div><div id=\"after\"></div>";
@@ -248,7 +247,6 @@
     var os = GB.qs(no).filter(function (q) { return q.ox === "O"; })
       .sort(function (a, b) { return (b.y || 0) - (a.y || 0); }).slice(0, 12);
     var h = '<div class="readhd"><h2>' + esc(nd.name) + " — 맞는 기출 문장</h2></div>" +
-      '<p class="muted" style="margin:4px 0 0;font-size:14.5px">시험에 맞는 문장으로 나온 것만 모았어요. 최근 것부터.</p>' +
       '<div class="readlist">' + os.map(function (q) { return "<p>" + esc(q.t) + "<small>" + esc(GB.src(q)) + "</small></p>"; }).join("") + "</div>" +
       '<div class="acts">' + (back ? '<button class="btn" id="nx">이어서 풀기</button>'
                                    : '<a class="btn" href="ox.html?node=' + no + '">이 쟁점 O·X 풀기</a>') + "</div>";
@@ -312,7 +310,7 @@
       '<div class="grid3"><div><b class="num">' + ok + "</b><span>맞힘</span></div><div><b class=\"num\" style=\"color:var(--warn)\">" + mis +
       '</b><span>확신했는데 틀림</span></div><div><b class="num">' + GB.streak() + "</b><span>연속 일</span></div></div>" +
       '<div class="acts" style="margin-top:22px"><a class="btn ghost" href="index.html">홈</a>' +
-      (mis ? '<a class="btn" href="ox.html?mode=hard">어려운 O·X</a>' : '<a class="btn" href="ox.html?mode=wrong">틀린 것 다시</a>') + "</div></div>";
+      (mis ? '<a class="btn" href="ox.html?mode=hard">어려운 O·X</a>' : '<a class="btn" href="ox.html?mode=wrong">오답 모아풀기</a>') + "</div></div>";
   }
 
   /* 키보드 — 1·2·3 확신도, O·X, Enter 다음 */
@@ -329,7 +327,7 @@
   if (mode === "speed") { runSpeed(); return; }
   if (!seq.length) {
     $("stage").innerHTML = '<div class="empty">' + (mode === "today" ? "오늘 분량 완료" :
-      mode === "wrong" ? "틀린 문장이 없어요." : "풀 문장이 없어요.") +
+      mode === "wrong" ? "" : "풀 문장이 없어요.") +
       '<div class="acts" style="justify-content:center;margin-top:18px"><a class="btn" href="index.html">홈</a></div></div>';
     return;
   }

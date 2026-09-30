@@ -69,8 +69,7 @@
 
   var 화면 = {
     intro: function () {
-      $("scr").innerHTML = '<h1>공시, 시험에 나온 문장으로<br>O·X부터 풉니다</h1>' +
-        '<p class="lead">소방 · 경찰 · 9급. 하루 정한 시간만큼, 오늘 할 것은 우리가 골라요.</p>' +
+      $("scr").innerHTML = '<h1>기출 O·X</h1>' +
         '<div class="body"></div><div class="foot"><button class="btn block" id="n">시작하기</button></div>';
       $("n").onclick = nextStep;
     },
@@ -112,18 +111,18 @@
     },
     subs: function () {
       var ss = GB.subs();
-      $("scr").innerHTML = "<h1>이 과목들을 봐요</h1><p class=\"lead\">" + esc(GB.track().name) + " 시험 과목이에요. 준비된 과목부터 풀 수 있어요.</p>" +
+      $("scr").innerHTML = "<h1>" + esc(GB.track().name) + " 과목</h1>" +
         '<div class="body"><div class="opts">' + ss.map(function (k) {
           var r = CATALOG.ready(k);
           return '<button type="button" disabled style="cursor:default;opacity:1">' + CATALOG.name(k) + "<small>" +
             (r ? "기출 " + GB.num(CATALOG.count(k)) + "개" : "준비 중") + "</small></button>";
         }).join("") + "</div></div>" +
-        '<div class="foot"><button class="btn block" id="n">좋아요</button></div>';
+        '<div class="foot"><button class="btn block" id="n">준비 완료</button></div>';
       $("n").onclick = nextStep;
     },
     date: function () {
       var tr = GB.track();
-      $("scr").innerHTML = "<h1>시험 날짜</h1><p class=\"lead\">2027년 " + esc(GB.exam().name) + " 일정은 아직 공고 전이에요. 예년 기준 예상 날짜를 넣어 뒀어요.</p>" +
+      $("scr").innerHTML = "<h1>시험 날짜</h1><p class=\"lead\">예상 " + GB.goal() + " (예년)</p>" +
         '<div class="body"><div class="dateline num"><span id="dv">' + GB.goal().replace(/-/g, ".") + '</span><span class="chip" id="dm">' + GB.goalMark() + "</span></div>" +
         '<input type="date" id="di" value="' + GB.goal() + '"></div>' +
         '<div class="foot"><button class="btn block" id="n">이 날짜로</button></div>';
@@ -136,10 +135,10 @@
     },
     min: function () {
       var cur = GB.minutes();
-      $("scr").innerHTML = "<h1>하루 몇 시간?</h1><p class=\"lead\">정한 시간만큼만 내요. 나중에 설정에서 바꿀 수 있어요.</p>" +
+      $("scr").innerHTML = "<h1>하루 몇 시간?</h1>" +
         '<div class="body"><div class="opts" id="op">' + GB.MIN_OPTS.map(function (m) {
           return '<button type="button" data-v="' + m + '" aria-pressed="' + (m === cur) + '">' + GB.hm(m) + "<small>약 " + Math.round(m * 60 / GB.SEC_PER) + "개</small>" +
-            (m === GB.MIN_REC ? '<span class="bdg">추천</span>' : "") + "</button>";
+            (m === GB.MIN_REC ? '<span class="bdg">강추</span>' : "") + "</button>";
         }).join("") + "</div></div>";
       $("op").querySelectorAll("button").forEach(function (b) {
         b.onclick = function () { GB.setMinutes(+b.dataset.v); b.setAttribute("aria-pressed", "true"); setTimeout(nextStep, 120); };
@@ -158,7 +157,7 @@
           '<div class="tm" id="tm"><i style="width:100%"></i></div>' +
           '<div class="qcard" style="margin-top:14px"><p class="sent">' + esc(q.t) + "</p></div>" +
           '<div class="oxb" id="oxb"><button type="button" data-a="O">O</button><button type="button" data-a="X">X</button></div>' +
-          '<div class="foot"><button class="skip" id="sk">건너뛰기<span class="tip">스무 문장을 다 풀어야 어디서부터 할지 정확히 골라요.</span></button></div>';
+          '<div class="foot"><button class="skip" id="sk">건너뛰기</button></div>';
         var locked = false;
         function pick(a) {
           if (locked) return; locked = true;
@@ -195,7 +194,7 @@
       /* ★ 「여기서부터」는 홈의 오늘 할 것이 실제로 고른 쟁점과 같아야 한다 — 다르면 학생이 헷갈린다 */
       var from = GB.today().foci.slice(0, 3);
       var fast = A.rec.filter(function (r) { return r.ok && r.ms < 6000; }).length;
-      $("scr").innerHTML = "<h1>" + (p.n ? p.n + "문장 중 " + p.ok + "개" : "좋아요, 바로 시작해요") + "</h1>" +
+      $("scr").innerHTML = "<h1>" + (p.n ? p.n + "문장 중 " + p.ok + "개" : "준비 완료") + "</h1>" +
         (p.n ? '<p class="lead">바로(6초 안에) 맞힌 것 ' + fast + "개 · 시간 넘긴 것 " + A.rec.filter(function (r) { return r.to; }).length + "개</p>" : "") +
         '<div class="body">' +
         (p.n ? '<div class="perpart">' + GB.parts.filter(function (pt) { return p.per[pt.no]; }).map(function (pt) {
