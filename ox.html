@@ -312,7 +312,7 @@
       '<div class="grid3"><div><b class="num">' + ok + "</b><span>맞힘</span></div><div><b class=\"num\" style=\"color:var(--warn)\">" + mis +
       '</b><span>확신했는데 틀림</span></div><div><b class="num">' + GB.streak() + "</b><span>연속 일</span></div></div>" +
       '<div class="acts" style="margin-top:22px"><a class="btn ghost" href="index.html">홈</a>' +
-      (mis ? '<a class="btn" href="ox.html?mode=hard">어려운 O·X</a>' : '<a class="btn" href="ox.html?mode=wrong">오답 모아풀기</a>') + "</div></div>";
+      ((mis || GB.pairs().length) ? '<a class="btn" href="ox.html?mode=hard">어려운 O·X</a>' : '<a class="btn" href="ox.html?mode=wrong">오답 모아풀기</a>') + "</div></div>";
   }
 
   /* 키보드 — 1·2·3 확신도, O·X, Enter 다음 */
@@ -328,9 +328,17 @@
   if (mode === "read") { showRead(nodeNo, false); $("ttl").textContent = "맞는 문장 읽기"; return; }
   if (mode === "speed") { runSpeed(); return; }
   if (!seq.length) {
-    $("stage").innerHTML = '<div class="empty">' + (mode === "today" ? "오늘 분량 완료" :
-      mode === "wrong" ? "" : "문장 없음") +
-      '<div class="acts" style="justify-content:center;margin-top:18px"><a class="btn" href="index.html">홈</a></div></div>';
+    /* 0개 모드 — 「문장 없음」+홈 하나만 두던 막다른 화면을 없앤다(2026-10-08 대표님).
+       어려운 O·X·헷갈리는 짝은 그 과목에 짝 자료가 없으면 오늘 O·X 로 바로 넘긴다. */
+    if ((mode === "hard" || mode === "pair") && !GB.today().finished) { location.replace("ox.html"); return; }
+    var 오답수 = GB.wrongList().length;
+    var 제목 = mode === "today" ? "오늘 분량 완료" : mode === "wrong" ? "틀린 문장 0개" : "이 과목은 짝 문장 준비 중";
+    $("stage").innerHTML = '<div class="done"><div class="big">' + 제목 + "</div>" +
+      '<div class="acts" style="flex-direction:column;gap:10px;margin-top:22px">' +
+      (mode !== "wrong" && 오답수 ? '<a class="btn block" href="ox.html?mode=wrong">오답 모아풀기 ' + 오답수 + "개</a>" : "") +
+      '<a class="btn block' + (mode !== "wrong" && 오답수 ? " ghost" : "") + '" href="skilltree.html">쟁점 골라 풀기</a>' +
+      '<a class="btn ghost block" href="ox.html?mode=speed">60초 스피드</a>' +
+      '<a class="btn ghost block" href="index.html">홈</a></div></div>';
     return;
   }
   pos = -1; next();

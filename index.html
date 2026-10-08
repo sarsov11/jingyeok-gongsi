@@ -87,7 +87,7 @@
   var h;
   if (t.finished) {
     h = '<h2>오늘 분량 완료</h2><p class="t">' + t.total + "개</p>" +
-        '<div style="margin-top:18px"><a class="btn block" href="ox.html?mode=hard">어려운 O·X</a></div>';
+        (GB.pairs().length ? '<div style="margin-top:18px"><a class="btn block" href="ox.html?mode=hard">어려운 O·X</a></div>' : '<div style="margin-top:18px"><a class="btn block" href="skilltree.html">쟁점 골라 풀기</a></div>');
   } else {
     h = '<h2>' + (t.done ? "이어서 " : "오늘 ") + GB.hm(t.min) + "</h2>" +
         '<p class="t">약 ' + GB.hm(t.min) + " · " + t.total + "개</p>" +
@@ -132,8 +132,8 @@
 
   var wrong = GB.wrongList().length;
   $("alt").innerHTML =
-    '<a class="row" href="ox.html?mode=hard"><span class="t"><b>어려운 O·X</b><span>함정 문장</span></span><span class="go">›</span></a>' +
-    '<a class="row" href="ox.html?mode=pair"><span class="t"><b>헷갈리는 짝</b><span>맞는 문장 고르기</span></span><span class="go">›</span></a>' +
+    (GB.pairs().length ? '<a class="row" href="ox.html?mode=hard"><span class="t"><b>어려운 O·X</b><span>함정 문장</span></span><span class="go">›</span></a>' +
+    '<a class="row" href="ox.html?mode=pair"><span class="t"><b>헷갈리는 짝</b><span>맞는 문장 고르기</span></span><span class="go">›</span></a>' : "") +
     (wrong ? '<a class="row" href="ox.html?mode=wrong"><span class="t"><b>오답 모아풀기</b><span>' + wrong + "개</span></span><span class=\"go\">›</span></a>" : "");
 })();
 </script>

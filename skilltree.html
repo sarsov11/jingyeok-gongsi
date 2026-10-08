@@ -264,10 +264,15 @@
     C:{n:"C",l:40,pl:78,m:.86,pm:.70,label:"30 미만"},
     L:{n:"–",l:36,pl:87,m:.44,pm:.30,label:"아직 안 풂"}
   };
+  /* 등급 색 — 등급마다 색상 자체를 다르게 한다(2026-10-08 대표님 「S·A·B·C 색 구분 안 됨」).
+     전에는 과목 색 하나의 명도만 바꿔서 B·C·아직 안 풂이 다 분홍으로 보였다. part 는 쓰지 않는다. */
+  var TC={ S:{h:42,s:96,pl:46,l:56}, A:{h:355,s:80,pl:50,l:60}, B:{h:216,s:82,pl:54,l:64},
+           C:{h:215,s:10,pl:62,l:52}, L:{h:220,s:10,pl:14,l:10} };
   function tone(part,t,dl){
-    var F=PC[part]||{h:200,s:60}, k=TIER[t], pp=paper(), d=(dl||0);
-    return "hsl("+F.h+" "+Math.round(F.s*(pp?k.pm:k.m))+"% "+(pp?k.pl-d:k.l+d)+"%)";
+    var k=TC[t]||TC.L, pp=paper(), d=(dl||0);
+    return "hsl("+k.h+" "+k.s+"% "+(pp?k.pl-d:k.l+d)+"%)";
   }
+  function 줄임(t){ t=String(t||""); return t.length>9?t.slice(0,8)+"…":t; }   /* 폰 이름표 — 전체 이름은 아래 목록에 */
   function tierOf(a,played){ return !played?"L":a>=80?"S":a>=60?"A":a>=30?"B":"C"; }
   function howFar(st){
     /* 0929 판정소 5차 — 원 색·크기로 이미 보이는 진행 상태를 문장으로 되풀이하지 않는다(지움) */
@@ -296,9 +301,9 @@
     var H=Math.round(W<640?W*1.30 : W<900?W*.88 : W*.58);
     LAY={W:W,H:H,CX:W/2,CY:H/2,k:k,
          rCore:Math.round(74*k+12),
-         fCore:Math.round(28*k+8),
-         fName:Math.round(11*k+4),
-         fSub:Math.round(9*k+3)};
+         fCore:Math.max(30,Math.round(28*k+8)),
+         fName:W<560?18:Math.max(16,Math.round(11*k+4)),     /* 폰 바닥값 — 전에는 10px 로 안 읽혔다(2026-10-08) */
+         fSub:W<560?15:Math.max(13.5,Math.round(9*k+3))};
     return LAY;
   }
   var uid=0;
@@ -322,11 +327,16 @@
   function orb(parent,x,y,r,col,pct,opt){
     opt=opt||{};
     var g=el("g",{},parent), p=Math.max(0,Math.min(100,pct||0))/100;
-    if(!opt.flat)
-      el("circle",{class:"nb",cx:x,cy:y,r:r+11,fill:col,
-        opacity:((paper()?(p?.2:.1):(p?.28:.14))*glowK()).toFixed(3),
+    /* 빛 = 성취도(2026-10-08 대표님 「성취도 올라갈수록 더 빛나게, 시작 안 했으면 검은색·빛 없음」).
+       번짐 반경 r+4 → r+26, 진하기 .18 → .85. 안 푼 것(p=0)은 빛을 아예 안 그린다. */
+    if(!opt.flat && p>0){
+      el("circle",{class:"nb",cx:x,cy:y,r:r+4+22*p,fill:col,
+        opacity:((.18+.67*p)*Math.max(.6,glowK())).toFixed(3),
         filter:"url(#soft)","pointer-events":"none"},g);
-    el("circle",{class:"nb",cx:x,cy:y,r:r,fill:SBG2,"fill-opacity":1},g);
+      if(p>=.8) el("circle",{class:"nb",cx:x,cy:y,r:r+3,fill:"none",stroke:col,"stroke-width":3,
+        opacity:".55",filter:"url(#soft)","pointer-events":"none"},g);
+    }
+    el("circle",{class:"nb",cx:x,cy:y,r:r,fill:p>0?SBG2:"#14171C","fill-opacity":1},g);
     if(p>0){
       var id="fill"+(++uid);
       var cp=el("clipPath",{id:id},g);
@@ -336,14 +346,15 @@
       var yy=y+r-2*r*p, half=Math.sqrt(Math.max(0,r*r-(yy-y)*(yy-y)));
       el("line",{x1:x-half,y1:yy,x2:x+half,y2:yy,stroke:col,"stroke-width":1.8,opacity:".9"},g);
     }
-    el("circle",{class:"nb",cx:x,cy:y,r:r,fill:"none",stroke:col,
-      "stroke-width":opt.bold?2.6:2.1,opacity:p?1:(paper()?.8:.6)},g);
+    el("circle",{class:"nb",cx:x,cy:y,r:r,fill:"none",stroke:p?col:"#3A4049",
+      "stroke-width":opt.bold?2.6:2.1,opacity:1},g);
     return g;
   }
   function coreOrb(g,hue,title,sub,onClick){
     var L=LAY, gid="cg"+(++uid);
     var d=el("defs",{},g), rg=el("radialGradient",{id:gid},d);
-    el("stop",{offset:"0%","stop-color":hue,"stop-opacity":paper()?".55":".8"},rg);
+    var ap=Math.max(0,Math.min(100,(ALL&&ALL.achieve)||0))/100;   /* 빛 = 전체 성취도 */
+    el("stop",{offset:"0%","stop-color":hue,"stop-opacity":ap?(.25+.65*ap).toFixed(2):"0"},rg);
     el("stop",{offset:"64%","stop-color":hue,"stop-opacity":".12"},rg);
     el("stop",{offset:"100%","stop-color":hue,"stop-opacity":"0"},rg);
     el("circle",{cx:L.CX,cy:L.CY,r:L.rCore*2.1,fill:"url(#"+gid+")","pointer-events":"none"},g);
@@ -444,7 +455,8 @@
     var L=layout(); sky(g0,"all");
     var g=el("g",{class:"ink"},g0);
     /* 판은 가로로 넓은데 궤도가 정원이면 좌우가 텅 빈다 — 타원으로 눕힌다(2026-08-31 실측) */
-    var RX=Math.round(L.W*.30), RY=Math.round(L.H*.30);
+    /* 궤도는 정원(2026-10-08 대표님 「원 찌그러짐」) — 짧은 변 기준 */
+    var RX=Math.round(Math.min(L.W,L.H)*(L.W<560?.47:.33)), RY=RX;
     el("ellipse",{cx:L.CX,cy:L.CY,rx:RX,ry:RY,fill:"none",stroke:SLINE,"stroke-width":1,opacity:".6"},g);
     var link=el("g",{},g), nodes=el("g",{},g), labs=el("g",{},g);
     var vols=T.parts.map(function(p){ return GB.partStat(p.no).vol; });
@@ -455,23 +467,24 @@
       var x=L.CX+RX*Math.cos(rad(a)), y=L.CY+RY*Math.sin(rad(a));
       el("line",{x1:L.CX,y1:L.CY,x2:x,y2:y,stroke:hue,"stroke-width":1.5,opacity:".28"},link);
       var rr=Math.round((30+20*Math.sqrt(ps.vol/maxV))*L.k+8);
-      var gp=orb(nodes,x,y,rr,hue,ps.achieve,{bold:true});
+      var gp=orb(nodes,x,y,rr,tone(p.no,tierOf(ps.achieve,ps.solved>0)),ps.achieve,{bold:true});
       gp.setAttribute("aria-label",p.name+" 열기 · 성취도 "+ps.achieve+"퍼센트");
       /* 편 이름은 길다(국민의 권리와 의무). 원 안에 넣으면 잘려서 바깥 이름표와 겹쳐 보인다 —
          원 안에는 편 번호만 두고 이름은 바깥 이름표에만 쓴다(2026-08-31 실측). */
-      txt(gp,"제"+p.no+"편",{x:x,y:y+L.fName*.42,"text-anchor":"middle",fill:SINK,
+      txt(gp,"제"+p.no+"편",{x:x,y:y+L.fName*.42,"text-anchor":"middle",fill:ps.achieve?SINK:"#F3F5F8",
         "font-size":Math.round(L.fName*1.15),"font-weight":900,
         "font-family":cv("--title")||"Noto Sans KR","pointer-events":"none"});
       /* 이름표는 반드시 바깥쪽으로 — 안쪽에 놓으면 가운데 코어와 겹친다(2026-08-31 실측) */
       var ca=Math.cos(rad(a)), sa=Math.sin(rad(a)), off=rr+14;
+      var 좁=LAY.W<560; if(좁){ ca=0; sa=1; off=rr+8; }   /* 폰 — 옆으로 긴 이름표가 그림 폭을 넓혀 전체가 반으로 줄던 것(2026-10-08) */
       var anc=ca>.3?"start":ca<-.3?"end":"middle";
       var up=(anc==="middle"&&sa<0);
       var y0=y+sa*off+(anc==="middle"?(sa>0?L.fName+6:-6):L.fName*.34);
       var lg=el("g",{class:"lblg"},labs);
       lg.dataset.cx=x; lg.dataset.cy=y; lg.dataset.r=rr;
-      var l1=txt(lg,p.name,{x:x+ca*off,y:up?y0-L.fSub-5:y0,"text-anchor":anc,fill:SINK,
+      var l1=txt(lg,좁?줄임(p.name):p.name,{x:x+ca*off,y:up?y0-L.fSub-5:y0,"text-anchor":anc,fill:SINK,
         "font-size":L.fName+2,"font-weight":700,"font-family":cv("--kr")});
-      var l2=txt(lg,ps.vol+"쪽 · 기출 "+ps.n+" · 성취도 "+ps.achieve+"%",
+      var l2=txt(lg,좁?"성취도 "+ps.achieve+"%":ps.vol+"쪽 · 기출 "+ps.n+" · 성취도 "+ps.achieve+"%",
         {x:x+ca*off,y:up?y0:y0+L.fSub+5,"text-anchor":anc,fill:SINK2,
          "font-size":L.fSub+1,"font-weight":600,"font-family":cv("--kr")});
       [l1,l2].forEach(function(e){ e.classList.add("lbl"); });
@@ -506,7 +519,7 @@
     sky(g0,"p"+pno);
     var g=el("g",{class:"ink"},g0);
     var chs=GB.chsOf(pno);
-    var RX=Math.round(L.W*(chs.length>8?.335:.30)), RY=Math.round(L.H*(chs.length>8?.335:.30));
+    var RX=Math.round(Math.min(L.W,L.H)*(L.W<560?.47:(chs.length>8?.35:.33))), RY=RX;
     el("ellipse",{cx:L.CX,cy:L.CY,rx:RX,ry:RY,fill:"none",stroke:SLINE,"stroke-width":1,opacity:".6"},g);
     var link=el("g",{},g), nodes=el("g",{},g), labs=el("g",{},g);
     var maxV=Math.max.apply(null,chs.map(function(c){ return GB.chStat(c.key).vol; }))||1;
@@ -516,17 +529,18 @@
       var st=GB.chStat(c.key);
       el("line",{x1:L.CX,y1:L.CY,x2:x,y2:y,stroke:hue,"stroke-width":1.4,opacity:".3"},link);
       var rr=Math.round((22+16*Math.sqrt(st.vol/maxV))*L.k+10);
-      var gp=orb(nodes,x,y,rr,hue,st.achieve,{bold:true});
+      var gp=orb(nodes,x,y,rr,tone(pno,tierOf(st.achieve,st.solved>0)),st.achieve,{bold:true});
       gp.setAttribute("aria-label",c.name+" 열기 · 성취도 "+st.achieve+"퍼센트");
       var ca=Math.cos(rad(a)), sa=Math.sin(rad(a)), off=rr+13;
+      var 좁=LAY.W<560; if(좁){ ca=0; sa=1; off=rr+8; }   /* 폰 — 옆으로 긴 이름표가 그림 폭을 넓혀 전체가 반으로 줄던 것(2026-10-08) */
       var anc=ca>.3?"start":ca<-.3?"end":"middle";
       var up=(anc==="middle"&&sa<0);
       var y0=y+sa*off+(anc==="middle"?(sa>0?L.fName+4:-4):L.fName*.34);
       var lg=el("g",{class:"lblg"},labs);
       lg.dataset.cx=x; lg.dataset.cy=y; lg.dataset.r=rr;
-      var l1=txt(lg,c.name,{x:x+ca*off,y:up?y0-L.fSub-4:y0,"text-anchor":anc,fill:SINK,
+      var l1=txt(lg,좁?줄임(c.name):c.name,{x:x+ca*off,y:up?y0-L.fSub-4:y0,"text-anchor":anc,fill:SINK,
         "font-size":L.fName+1,"font-weight":700,"font-family":cv("--kr")});
-      var l2=txt(lg,c.nodes.length+"쟁점 · "+st.vol+"쪽 · "+st.achieve+"%",
+      var l2=txt(lg,좁?"성취도 "+st.achieve+"%":c.nodes.length+"쟁점 · "+st.vol+"쪽 · "+st.achieve+"%",
         {x:x+ca*off,y:up?y0:y0+L.fSub+4,"text-anchor":anc,fill:SINK2,
          "font-size":L.fSub,"font-weight":600,"font-family":cv("--kr")});
       [l1,l2].forEach(function(e){ e.classList.add("lbl"); });
@@ -553,7 +567,7 @@
     sky(g0,key);
     var g=el("g",{class:"ink"},g0);
     var list=chNodes(key), m=list.length;
-    var RX=Math.round(L.W*(m>9?.335:.30)), RY=Math.round(L.H*(m>9?.335:.30));
+    var RX=Math.round(Math.min(L.W,L.H)*(L.W<560?.47:(m>9?.35:.33))), RY=RX;
     el("ellipse",{cx:L.CX,cy:L.CY,rx:RX,ry:RY,fill:"none",stroke:SLINE,"stroke-width":1,opacity:".6"},g);
     var link=el("g",{},g), nodes=el("g",{},g), labs=el("g",{},g);
     var maxV=Math.max.apply(null,list.map(function(n){ return n.vol; }))||1;
@@ -569,15 +583,16 @@
       var gp=orb(nodes,x,y,rr,tone(c.part,tier),st.achieve,{});
       gp.setAttribute("aria-label",n.title+" 열기 · 성취도 "+st.achieve+"퍼센트");
       var ca=Math.cos(rad(a)), sa=Math.sin(rad(a)), off=rr+13;
+      var 좁=LAY.W<560; if(좁){ ca=0; sa=1; off=rr+8; }   /* 폰 — 옆으로 긴 이름표가 그림 폭을 넓혀 전체가 반으로 줄던 것(2026-10-08) */
       var anc=ca>.3?"start":ca<-.3?"end":"middle";
       var up=(anc==="middle"&&sa<0);
       var y0=y+sa*off+(anc==="middle"?(sa>0?L.fName+4:-4):L.fName*.34);
       var lg=el("g",{class:"lblg"},labs);
       lg.dataset.cx=x; lg.dataset.cy=y; lg.dataset.r=rr;
-      var short=n.title.length>22?n.title.slice(0,21)+"…":n.title;
+      var short=좁?줄임(n.title):(n.title.length>22?n.title.slice(0,21)+"…":n.title);
       var l1=txt(lg,short,{x:x+ca*off,y:up?y0-L.fSub-4:y0,"text-anchor":anc,
         fill:lock?SINK2:SINK,"font-size":L.fName,"font-weight":700,"font-family":cv("--kr")});
-      var l2=txt(lg,n.vol+"쪽 · 기출 "+n.q+(lock?"":" · "+st.achieve+"%"),
+      var l2=txt(lg,좁?(lock?"":"성취도 "+st.achieve+"%"):n.vol+"쪽 · 기출 "+n.q+(lock?"":" · "+st.achieve+"%"),
         {x:x+ca*off,y:up?y0:y0+L.fSub+4,"text-anchor":anc,fill:SINK2,
          "font-size":L.fSub,"font-weight":600,"font-family":cv("--kr")});
       [l1,l2].forEach(function(e){ e.classList.add("lbl"); });
@@ -758,7 +773,7 @@
     document.getElementById("pkEyebrow").textContent=GB.ch(n.chkey).name;
     var tc=document.getElementById("pkTier");
     tc.textContent=tier==="L"?"미착수":TIER[tier].n;
-    tc.style.background=tier==="S"?GOLD:tone(n.part,tier);
+    tc.style.background=tone(n.part,tier);
     tc.style.color=(tier==="C"||tier==="L")?SBG2:SBG;
     document.getElementById("pkTitle").textContent=n.title;
     document.getElementById("pkQ").textContent=
@@ -825,8 +840,9 @@
           '<span class="cd" style="color:'+PC[p.no].hex+'">'+p.no+'</span>'+
           '<h3>'+esc(p.name)+'</h3><span class="n">'+st.vol+'쪽 · 기출 '+st.n+'</span></div>'+
           GB.chsOf(p.no).map(function(c){
+            var cs=GB.chStat(c.key), ct=tierOf(cs.achieve,cs.solved>0);
             return '<div class="mrow" data-goch="'+c.key+'">'+
-              '<span class="bul" style="background:'+PC[p.no].hex+';opacity:.7"></span>'+
+              '<span class="bul" style="background:'+tone(p.no,ct)+'"></span>'+
               '<span class="nm">'+esc(c.name)+'</span>'+
               '<span class="pc">쟁점 '+c.nodes.length+'</span></div>';
           }).join("")+'</div>';
@@ -840,8 +856,7 @@
           chNodes(c.key).map(function(n){
             var st=GB.nodeStat(n.no), tier=tierOf(st.achieve,st.solved>0);
             return '<div class="mrow" data-node="'+n.no+'">'+
-              '<span class="bul" style="background:'+(tier==="S"?GOLD:tone(c.part,tier,paper()?14:0))+
-              ';opacity:'+(tier==="L"?.55:1)+'"></span>'+
+              '<span class="bul" style="background:'+tone(c.part,tier)+'"></span>'+
               '<span class="nm">'+esc(n.title)+'</span>'+
               '<span class="pc">'+n.vol+'쪽 · 기출 '+n.q+'</span></div>';
           }).join("")+'</div>';
@@ -860,10 +875,10 @@
     var p=part||T.parts[0].no;
     var size='<span class="sz">원 크기<i style="width:9px;height:9px"></i>'+
              '<i style="width:16px;height:16px"></i>학습 분량</span>';
-    document.getElementById("legend").innerHTML=(level>0
+    document.getElementById("legend").innerHTML=(true
       ? ["S","A","B","C","L"].map(function(k){
           return '<span class="k"><i class="dot" style="background:'+
-            (k==="S"?GOLD:tone(p,k))+'"></i>'+TIER[k].n+' — '+TIER[k].label+'</span>'; }).join("")
+            tone(p,k)+'"></i>'+TIER[k].n+' — '+TIER[k].label+'</span>'; }).join("")
       : T.parts.map(function(x){
           return '<span class="k"><i class="dot" style="background:'+PC[x.no].hex+'"></i>'+
             esc(x.name)+'</span>'; }).join(""))+size;
