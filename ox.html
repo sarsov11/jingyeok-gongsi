@@ -136,7 +136,7 @@
         '<p class="sent" id="sent">' + esc(mc ? mc.s : q.t) + "</p>" +
         (mc && mc.d ? '<div class="case mcdata" style="margin:12px 0 0">' + esc(mc.d) + "</div>" : "") + "</div>" +
       '<div class="step"><h3>확신도</h3><div class="conf" id="conf">' +
-        [{ v: "sure", name: "● 확실" }, { v: "half", name: "◐ 헷갈림" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
+        [{ v: "sure", name: "확실" }, { v: "half", name: "헷갈림" }].map(function (c, i) { return '<button type="button" data-v="' + c.v + '" aria-pressed="false">' + c.name + "</button>"; }).join("") +
       "</div></div>" +
       단추 +
       '<p class="hint" id="hint"></p>' +
@@ -178,27 +178,28 @@
 
         var h = '<div class="verdict ' + j.tone + '"><div class="top"><span class="mk">' + (ok ? "O" : "✕") + "</span>" +
           (ok ? '<span class="reward">+1</span>' : "") + '<span class="chip">' + esc(j.label || { "재시도정답": "다시 풀어 맞힘", "연속오답": "연속 오답" }[j.kind] || j.kind) + "</span></div>" +
-          (j.say ? '<p class="say">' + esc(j.say) + "</p>" : "") +
-          '<p class="ans">정답 <b>' + (mc ? "①②③④⑤"[+정답 - 1] : q.ox) + "</b>" + "" + "</p>";
+          '<p class="say">' + esc(j.say) + "</p>" +
+          '<p class="ans">정답 <b>' + (mc ? "①②③④⑤"[+정답 - 1] : q.ox) + "</b></p>";
         var 해설 = "";
         var p = pairOf(q.i);
         if (p) {
           var d = GB.markDiff(p.o.t, p.x.t);
-          해설 += '<div class="pair">' +
+          해설 += '<div class="pair"><div class="lab">헷갈리는 짝</div>' +
                '<p><b style="color:var(--ok)">맞음</b> ' + d[0] + "</p>" +
                '<p><b style="color:var(--no)">틀림</b> ' + d[1] + "</p></div>";
         } else if (!mc && q.ox === "X") {
           var o = nearestO(q);
           if (o) 해설 += '<div class="pair"><div class="lab">같은 쟁점의 맞는 기출 문장 · ' + esc(GB.src(o)) + "</div><p>" + GB.markDiff(o.t, q.t)[0] + "</p></div>";
         }
-        if (해설) h += '<div class="expl" id="expl"><button type="button">해설 보기</button><div class="body">' + 해설 + "</div></div>";
+        if (해설) h += '<div class="expl" id="expl"><button type="button">맞는 문장 보기</button><div class="body">' + 해설 + "</div></div>";
+        if (extra) h += '<p class="more">' + esc(GB.node(q.n).name) + " 문장 1개 추가</p>";
         h += "</div>";
         var readBtn = (j.next === "concept" || j.next === "lecture")
           ? '<button class="btn ghost" id="read">' + JUDGE.다음말[j.next].t + "</button>" : "";
         h += '<div class="acts">' + readBtn + '<button class="btn" id="nx">다음</button></div>';
         $("after").innerHTML = h;
         $("nx").onclick = next;
-        if ($("expl")) $("expl").firstChild.onclick = function () { $("expl").classList.toggle("open"); this.textContent = $("expl").classList.contains("open") ? "해설 접기" : "해설 보기"; };
+        if ($("expl")) $("expl").firstChild.onclick = function () { $("expl").classList.toggle("open"); this.textContent = $("expl").classList.contains("open") ? "맞는 문장 접기" : "맞는 문장 보기"; };
         if ($("read")) $("read").onclick = function () { showRead(q.n, true); };
         $("nx").focus({ preventScroll: true });
         $("after").scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -214,7 +215,7 @@
     var A = flip ? [p.x, p.o] : [p.o, p.x], done = false;
     $("stage").innerHTML =
       '<div class="qcard"><div class="src">' + nodeChip(p.n) + '<span class="chip cta">헷갈리는 짝</span></div>' +
-      '<p class="sent" style="font-size:17px"><b>맞는 문장</b> 선택</p>' +
+      '<p class="sent" style="font-size:17px"><b>맞는 문장</b> 고르기</p>' +
       '<div class="two" id="two">' + A.map(function (x, i) {
         return '<button type="button" data-i="' + x.i + '"><b>' + "가나"[i] + '</b><span class="tx">' + esc(x.t) + "</span></button>";
       }).join("") + "</div></div><div id=\"after\"></div>";
@@ -235,7 +236,7 @@
         drawProg();
         $("after").innerHTML = '<div class="verdict ' + (ok ? "good" : "bad") + '"><div class="top"><span class="mk">' + (ok ? "O" : "✕") + "</span></div>" +
           '<p class="say">' + (ok ? "정답" : "오답. 칠한 부분 비교") + "</p>" +
-          '<p class="ans">출처 — 맞음 ' + esc((p.o.y || "") + " " + (p.o.e || "")) + " · 틀림 " + esc((p.x.y || "") + " " + (p.x.e || "")) + "</p></div>" +
+          '<p class="ans">출처: 맞음 ' + esc((p.o.y || "") + " " + (p.o.e || "")) + " · 틀림 " + esc((p.x.y || "") + " " + (p.x.e || "")) + "</p></div>" +
           '<div class="acts"><button class="btn" id="nx">다음</button></div>';
         $("nx").onclick = next; $("nx").focus({ preventScroll: true });
       };
@@ -328,7 +329,7 @@
   if (mode === "speed") { runSpeed(); return; }
   if (!seq.length) {
     $("stage").innerHTML = '<div class="empty">' + (mode === "today" ? "오늘 분량 완료" :
-      mode === "wrong" ? "" : "풀 문장이 없어요.") +
+      mode === "wrong" ? "" : "문장 없음") +
       '<div class="acts" style="justify-content:center;margin-top:18px"><a class="btn" href="index.html">홈</a></div></div>';
     return;
   }

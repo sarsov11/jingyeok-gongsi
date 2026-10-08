@@ -32,14 +32,14 @@
   var S = GB.state(), done = Object.keys(S.pairs).filter(function (k) { return S.pairs[k].ok; }).length;
   var wrong = GB.wrongList().length, mis = Object.keys(S.ans).filter(function (id) { return S.ans[id].kind === "오개념"; }).length;
   var rows = [
-    ["ox.html?mode=hard", "어려운 O·X", "함정 문장", GB.pairs().length + "개"],
-    ["ox.html?mode=pair", "헷갈리는 짝", "닮은 기출 2문장", done + " / " + GB.pairs().length],
-    ["ox.html?mode=speed", "60초 스피드", "확신도 없이 반응만. 짧은 문장으로", "60초"],
-    ["ox.html?mode=wrong", "오답 모아풀기", "", wrong + "개"],
-    ["skilltree.html", "쟁점 골라 풀기", "스킬트리에서 쟁점을 누르면 그 쟁점만 풀어요", GB.nodes.length + "쟁점"]
+    ["ox.html?mode=hard", "어려운 O·X", "함정 문장" + (mis ? " + 확신 오답 " + mis + "개" : ""), GB.pairs().length + "개"],
+    ["ox.html?mode=pair", "헷갈리는 짝", "맞는 문장 고르기", done + " / " + GB.pairs().length],
+    ["ox.html?mode=speed", "60초 스피드", "짧은 문장", "60초"],
+    ["ox.html?mode=wrong", "오답 모아풀기", wrong ? "최근 오답 순" : "", wrong + "개"],
+    ["skilltree.html", "쟁점 골라 풀기", "스킬트리", GB.nodes.length + "쟁점"]
   ];
   document.getElementById("ls").innerHTML = rows.map(function (r) {
-    return '<a class="row" href="' + r[0] + '"><span class="t"><b>' + r[1] + "</b><span>" + GB.esc(r[2]) + '</span></span><span class="n num">' + r[3] + "</span></a>";
+    return '<a class="row" href="' + r[0] + '"><span class="t"><b>' + r[1] + "</b>" + (r[2] ? "<span>" + GB.esc(r[2]) + "</span>" : "") + '</span><span class="n num">' + r[3] + "</span></a>";
   }).join("");
 })();
 </script>

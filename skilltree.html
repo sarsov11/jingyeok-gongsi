@@ -122,6 +122,7 @@
   .sh-note{font-size:12.5px;color:var(--ink-4);line-height:1.72;margin-bottom:16px;
     border-left:2px solid var(--line-2);padding-left:12px}
   .sh-note b{color:var(--ink-3)}
+  .sh-note:empty{display:none}
   .keylist{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
   .keylist span{font-size:13px;padding:5px 11px;border-radius:8px;background:var(--surface-2);
     border:1px solid var(--line);color:var(--ink-2)}
@@ -268,6 +269,10 @@
     return "hsl("+F.h+" "+Math.round(F.s*(pp?k.pm:k.m))+"% "+(pp?k.pl-d:k.l+d)+"%)";
   }
   function tierOf(a,played){ return !played?"L":a>=80?"S":a>=60?"A":a>=30?"B":"C"; }
+  function howFar(st){
+    /* 0929 판정소 5차 — 원 색·크기로 이미 보이는 진행 상태를 문장으로 되풀이하지 않는다(지움) */
+    return "";
+  }
 
   /* ══ SVG ══ */
   var NS="http://www.w3.org/2000/svg";
@@ -652,7 +657,8 @@
         '<em class="swapin" style="font-style:normal;color:var(--red-2)">'+esc(ch.name)+'</em>';
       document.getElementById("upbtn").onclick=function(){ if(!busy) goAll(); };
       document.getElementById("uppart").onclick=function(){ if(!busy) goPart(ch.part,LAY.CX,LAY.CY); };
-      document.getElementById("lede").textContent="";
+      document.getElementById("lede").textContent=
+        "쟁점 "+ch.nodes.length+"개 · 학습 분량 "+st.vol+"쪽 · 기출 선지 "+st.n+"개";
       document.getElementById("plateTitle").textContent=ch.name;
       document.getElementById("plateSub").textContent="쟁점 "+ch.nodes.length;
     }else{
@@ -660,7 +666,8 @@
       c.innerHTML='<button class="up" id="upbtn">'+esc(T.subject)+'</button><span class="sep">›</span>'+
         '<em class="swapin" style="font-style:normal;color:var(--red-2)">'+esc(p.name)+'</em>';
       document.getElementById("upbtn").onclick=function(){ if(!busy) goAll(); };
-      document.getElementById("lede").textContent="";
+      document.getElementById("lede").textContent=
+        "장 "+chs.length+" · 쟁점 "+ps.nodes+" · 학습 분량 "+ps.vol+"쪽 · 기출 선지 "+ps.n+"개";
       document.getElementById("plateTitle").textContent=p.name;
       var weak=GB.nodes.filter(function(n){ return n.part===part&&GB.nodeStat(n.no).solved>0; })
         .sort(function(a,b){ return GB.nodeStat(a.no).achieve-GB.nodeStat(b.no).achieve; })[0];
@@ -717,7 +724,7 @@
     var st=GB.partStat(p.no), chs=GB.chsOf(p.no);
     document.getElementById("pkEyebrow").textContent="편";
     var tc=document.getElementById("pkTier");
-    tc.textContent="들어가기"; tc.style.background=PC[p.no].hex; tc.style.color=SBG;
+    tc.textContent=""; tc.style.background=PC[p.no].hex; tc.style.color=SBG;
     document.getElementById("pkTitle").textContent=p.name;
     document.getElementById("pkQ").textContent=
       "장 "+chs.length+" · 쟁점 "+st.nodes+"개";
@@ -734,7 +741,7 @@
     var st=GB.chStat(c.key), list=chNodes(c.key);
     document.getElementById("pkEyebrow").textContent=GB.part(c.part).name;
     var tc=document.getElementById("pkTier");
-    tc.textContent="들어가기"; tc.style.background=PC[c.part].hex; tc.style.color=SBG;
+    tc.textContent=""; tc.style.background=PC[c.part].hex; tc.style.color=SBG;
     document.getElementById("pkTitle").textContent=c.name;
     document.getElementById("pkQ").textContent="쟁점 "+list.length+"개";
     document.getElementById("pkBody").innerHTML=
@@ -755,7 +762,7 @@
     tc.style.color=(tier==="C"||tier==="L")?SBG2:SBG;
     document.getElementById("pkTitle").textContent=n.title;
     document.getElementById("pkQ").textContent=
-      "기출 선지 "+n.q+"개";
+      "학습 분량 "+n.vol+"쪽 · 기출 선지 "+n.q+"개";
     document.getElementById("pkBody").innerHTML=
       '<div class="pk-stats"><div><b>'+n.vol+'</b><span>학습 분량</span></div>'+
       '<div><b>'+n.q+'</b><span>기출 선지</span></div>'+
@@ -783,7 +790,7 @@
       '<span class="fact">기출 선지 <b>'+n.q+'</b></span>'+
       '<span class="fact">판례 <b>'+n.cs+'</b></span>'+
       '<span class="fact">조문 <b>'+n.law+'</b></span>'+
-      (st.solved?'<span class="fact">성취도 <b>'+st.achieve+'</b>%</span>':"");
+      (st.solved?'<span class="fact"><b>'+st.achieve+'</b>%</span>':'');
     document.getElementById("shKeys").innerHTML="";
     document.getElementById("shNote").innerHTML="";
     /* ★ 풀기 전에는 답을 보여 주지 않는다 — 옛 판은 선지 다섯 개를 O·X 와 함께 미리 보여 줘서
@@ -794,7 +801,7 @@
     document.getElementById("shGo").innerHTML= qs.length
       ? '<a class="btn" href="ox.html?node='+n.no+'">이 쟁점 O·X 풀기</a>'+
         '<a class="btn ghost" href="ox.html?read='+n.no+'">맞는 문장 읽기</a>'
-      : "";
+      : '';
     sheet.hidden=false;
     requestAnimationFrame(function(){ sheet.classList.add("on"); });
     document.body.style.overflow="hidden";
@@ -862,7 +869,9 @@
             esc(x.name)+'</span>'; }).join(""))+size;
   }
   function note(){
-    document.getElementById("note").innerHTML="";
+    var s=T.stat;
+    document.getElementById("note").innerHTML=
+      '성취도 = 푼 비율 55% + 맞힌 비율 45%';
   }
 
   /* ══ 시작 ══ */
