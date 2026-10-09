@@ -62,6 +62,9 @@
   function setExam(id, sid) {
     P.exam = id; P.series = sid || null;
     P.subs = C ? C.subsOf(id, sid) : [];
+    /* 시험을 바꾸면 옛 시험의 과목이 「지금 과목」으로 남지 않게 (2026-10-09) */
+    if (P.subs.length && P.subs.indexOf(P.cur) < 0)
+      P.cur = P.subs.filter(function (s) { return C && C.ready(s); })[0] || P.subs[0];
     if (!P.goalMine) P.goal = exam().date;
     savePref();
   }
